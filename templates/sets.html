@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}Lego Sets - Lego Workout{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-3 align-items-center">
+  <div class="col">
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-grid-3x3-gap-fill lego-accent"></i> Lego Sets
+    </h2>
+    <p class="text-muted small mb-0">
+      {{ sets | selectattr('completed', 'equalto', False) | list | length }} in progress &middot;
+      {{ sets | selectattr('completed', 'equalto', True) | list | length }} completed
+    </p>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-lego-yellow fw-bold" data-bs-toggle="modal" data-bs-target="#addSetModal">
+      <i class="bi bi-plus-circle-fill"></i> Add Set
+    </button>
+  </div>
+</div>
+
+{% set in_progress = sets | selectattr('completed', 'equalto', False) | list %}
+{% set completed_sets = sets | selectattr('completed', 'equalto', True) | list %}
+
+<!-- In Progress -->
+{% if in_progress %}
+<h5 class="text-warning fw-bold mb-3"><i class="bi bi-tools"></i> In Progress</h5>
+<div class="row g-3 mb-4">
+  {% for ls in in_progress %}
+  <div class="col-sm-6 col-lg-4 col-xl-3">
+    <div class="card set-card h-100 border-warning border-opacity-25">
+      <!-- Image or placeholder -->
+      <a href="{{ url_for('set_detail', set_id=ls.id) }}" class="text-decoration-none">
+        {% if ls.image_url %}
+        <img src="{{ ls.image_url }}" class="card-img-top set-img" alt="{{ ls.name }}" />
+        {% else %}
+        <div class="set-img-placeholder d-flex align-items-center justify-content-center">
+          <div class="text-center">
+            <i class="bi bi-grid-3x3-gap-fill fs-1 text-warning opacity-50"></i>
+            <div class="text-warning fw-bold mt-1">{{ ls.set_number }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </a>
+
+      <div class="card-body pb-2">
+        <h6 class="card-title fw-bold mb-1">
+          <a href="{{ url_for('set_detail', set_id=ls.id) }}" class="text-decoration-none text-light">{{ ls.name }}</a>
+        </h6>
+        <div class="d-flex flex-wrap gap-1 mb-2">
+          <span class="badge bg-warning text-dark"># {{ ls.set_number }}</span>
+          {% if ls.theme %}
+          <span class="badge bg-secondary">{{ ls.theme }}</span>
+          {% endif %}
+          {% if ls.piece_count %}
+          <span class="badge bg-dark border border-secondary">{{ "{:,}".format(ls.piece_count) }} pcs</span>
+          {% endif %}
+        </div>
+
+        <div class="d-flex gap-3 text-center small mb-2">
+          <div>
+            <div class="fw-bold text-info">{{ ls.total_session_count }}</div>
+            <div class="text-muted">Sessions</div>
+          </div>
+          <div>
+            <div class="fw-bold text-warning">{{ ls.total_distance }}</div>
+            <div class="text-muted">Miles</div>
+          </div>
+          <div>
+            <div class="fw-bold text-muted">{{ ls.total_duration | int }}</div>
+            <div class="text-muted">Mins</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer d-flex gap-1 bg-transparent border-top border-secondary">
+        <form method="POST" action="{{ url_for('complete_set', set_id=ls.id) }}" class="flex-fill"
+              onsubmit="return confirm('Mark \'{{ ls.name }}\' as complete?')">
+          <button class="btn btn-success btn-sm w-100">
+            <i class="bi bi-check2-circle"></i> Complete
+          </button>
+        </form>
+        <a href="{{ url_for('edit_set', set_id=ls.id) }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="POST" action="{{ url_for('delete_set', set_id=ls.id) }}"
+              onsubmit="return confirm('Delete \'{{ ls.name }}\'? Sessions will be unlinked.')">
+          <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Completed -->
+{% if completed_sets %}
+<h5 class="text-success fw-bold mb-3"><i class="bi bi-trophy-fill"></i> Completed</h5>
+<div class="row g-3">
+  {% for ls in completed_sets %}
+  <div class="col-sm-6 col-lg-4 col-xl-3">
+    <div class="card set-card h-100 opacity-75 border-success border-opacity-25">
+      <a href="{{ url_for('set_detail', set_id=ls.id) }}" class="text-decoration-none">
+        {% if ls.image_url %}
+        <img src="{{ ls.image_url }}" class="card-img-top set-img" alt="{{ ls.name }}" />
+        {% else %}
+        <div class="set-img-placeholder set-img-placeholder-done d-flex align-items-center justify-content-center">
+          <div class="text-center">
+            <i class="bi bi-trophy-fill fs-1 text-success opacity-75"></i>
+            <div class="text-success fw-bold mt-1">{{ ls.set_number }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </a>
+
+      <div class="card-body pb-2">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <h6 class="card-title fw-bold mb-0">
+            <a href="{{ url_for('set_detail', set_id=ls.id) }}" class="text-decoration-none text-light">{{ ls.name }}</a>
+          </h6>
+          <span class="badge bg-success ms-1 text-nowrap"><i class="bi bi-check2"></i> Done</span>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mb-2">
+          <span class="badge bg-warning text-dark"># {{ ls.set_number }}</span>
+          {% if ls.theme %}
+          <span class="badge bg-secondary">{{ ls.theme }}</span>
+          {% endif %}
+          {% if ls.piece_count %}
+          <span class="badge bg-dark border border-secondary">{{ "{:,}".format(ls.piece_count) }} pcs</span>
+          {% endif %}
+        </div>
+        {% if ls.completion_date %}
+        <div class="text-muted small mb-2">
+          <i class="bi bi-calendar-check"></i> Completed {{ ls.completion_date.strftime("%b %d, %Y") }}
+        </div>
+        {% endif %}
+        <div class="d-flex gap-3 text-center small">
+          <div>
+            <div class="fw-bold text-info">{{ ls.total_session_count }}</div>
+            <div class="text-muted">Sessions</div>
+          </div>
+          <div>
+            <div class="fw-bold text-warning">{{ ls.total_distance }}</div>
+            <div class="text-muted">Miles</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer d-flex gap-1 bg-transparent border-top border-secondary">
+        <form method="POST" action="{{ url_for('reopen_set', set_id=ls.id) }}" class="flex-fill">
+          <button class="btn btn-outline-warning btn-sm w-100">
+            <i class="bi bi-arrow-counterclockwise"></i> Reopen
+          </button>
+        </form>
+        <a href="{{ url_for('edit_set', set_id=ls.id) }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="POST" action="{{ url_for('delete_set', set_id=ls.id) }}"
+              onsubmit="return confirm('Delete \'{{ ls.name }}\'?')">
+          <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not sets %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-grid-3x3-gap-fill fs-1 d-block mb-3"></i>
+  <p class="mb-3">No Lego sets added yet.</p>
+  <button class="btn btn-lego-yellow" data-bs-toggle="modal" data-bs-target="#addSetModal">
+    <i class="bi bi-plus-circle-fill"></i> Add Your First Set
+  </button>
+</div>
+{% endif %}
+
+<!-- Add Set Modal -->
+<div class="modal fade" id="addSetModal" tabindex="-1" aria-labelledby="addSetModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="addSetModalLabel">
+          <i class="bi bi-plus-circle-fill text-warning"></i> Add New Lego Set
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('add_set') }}">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-sm-5">
+              <label class="form-label fw-semibold">Set Number <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="sets_set_number" name="set_number" placeholder="e.g. 10300" required />
+                <button type="button" class="btn btn-outline-warning" id="sets_btn_lookup" title="Look up on Rebrickable">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-sm-7">
+              <label class="form-label fw-semibold">Set Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="sets_name" name="name" placeholder="e.g. Back to the Future" required />
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label fw-semibold">Piece Count</label>
+              <input type="number" class="form-control" id="sets_piece_count" name="piece_count" placeholder="1872" min="1" />
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label fw-semibold">Theme</label>
+              <input type="text" class="form-control" id="sets_theme" name="theme" placeholder="Icons, Technic…" />
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label fw-semibold">Image URL</label>
+              <input type="url" class="form-control" id="sets_image_url" name="image_url" placeholder="auto-filled by lookup" />
+            </div>
+            <div class="col-12">
+              <div id="sets_lookup_status" class="form-text"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-lego-yellow fw-bold">
+            <i class="bi bi-plus-circle-fill"></i> Add Set
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const btn = document.getElementById('sets_btn_lookup');
+  const numInput = document.getElementById('sets_set_number');
+  const nameInput = document.getElementById('sets_name');
+  const piecesInput = document.getElementById('sets_piece_count');
+  const themeInput = document.getElementById('sets_theme');
+  const imageInput = document.getElementById('sets_image_url');
+  const status = document.getElementById('sets_lookup_status');
+
+  function lookupSet() {
+    const num = numInput ? numInput.value.trim() : '';
+    if (!num) return;
+    status.textContent = 'Looking up...'; status.className = 'form-text text-info';
+    btn.disabled = true;
+    fetch(`/api/lookup_set?set_number=${encodeURIComponent(num)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          status.textContent = data.error; status.className = 'form-text text-danger';
+        } else {
+          if (data.name) nameInput.value = data.name;
+          if (data.piece_count) piecesInput.value = data.piece_count;
+          if (data.theme) themeInput.value = data.theme;
+          if (data.image_url) imageInput.value = data.image_url;
+          status.textContent = `Found: ${data.name} (${data.year}, ${data.piece_count} pieces)`;
+          status.className = 'form-text text-success';
+        }
+      })
+      .catch(() => { status.textContent = 'Lookup failed — fill in manually.'; status.className = 'form-text text-warning'; })
+      .finally(() => { btn.disabled = false; });
+  }
+
+  if (btn) btn.addEventListener('click', lookupSet);
+  if (numInput) numInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookupSet(); } });
+})();
+</script>
+{% endblock %}

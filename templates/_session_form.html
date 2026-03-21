@@ -1,0 +1,281 @@
+<!-- Reusable session form fragment -->
+{% if not lego_sets is defined %}{% set lego_sets = [] %}{% endif %}
+{% if not session is defined %}{% set session = None %}{% endif %}
+
+<div class="row g-3">
+  <!-- Date & Duration -->
+  <div class="col-sm-6">
+    <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+    <input
+      type="date"
+      class="form-control"
+      name="date"
+      value="{{ session.date.strftime('%Y-%m-%d') if session else '' }}"
+      id="id_date"
+      required
+    />
+  </div>
+  <div class="col-sm-6">
+    <label class="form-label fw-semibold">Duration (minutes) <span class="text-danger">*</span></label>
+    <input
+      type="number"
+      class="form-control"
+      name="duration_minutes"
+      id="id_duration"
+      min="1"
+      step="0.5"
+      placeholder="e.g. 45"
+      value="{{ session.duration_minutes if session else '' }}"
+      required
+    />
+  </div>
+
+  <!-- Distance & Speed -->
+  <div class="col-sm-6">
+    <label class="form-label fw-semibold">Distance (miles)</label>
+    <input
+      type="number"
+      class="form-control"
+      name="distance_miles"
+      id="id_distance"
+      min="0"
+      step="0.01"
+      placeholder="e.g. 2.5 (auto-calc if speed given)"
+      value="{{ '%.2f'|format(session.distance_miles) if session and session.distance_miles else '' }}"
+    />
+  </div>
+  <div class="col-sm-6">
+    <label class="form-label fw-semibold">Avg Speed (mph)</label>
+    <input
+      type="number"
+      class="form-control"
+      name="avg_speed_mph"
+      id="id_speed"
+      min="0"
+      step="0.1"
+      placeholder="e.g. 3.0 (auto-calc if distance given)"
+      value="{{ '%.1f'|format(session.avg_speed_mph) if session and session.avg_speed_mph else '' }}"
+    />
+  </div>
+
+  <!-- Calories -->
+  <div class="col-sm-6">
+    <label class="form-label fw-semibold">Calories Burned</label>
+    <div class="input-group">
+      <input
+        type="number"
+        class="form-control"
+        name="calories_burned"
+        id="id_calories"
+        min="0"
+        step="1"
+        placeholder="Leave blank to auto-calculate"
+        value="{{ session.calories_burned | int if session and session.calories_burned else '' }}"
+      />
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_calc_cal" title="Preview auto-calculation">
+        <i class="bi bi-calculator"></i>
+      </button>
+    </div>
+    <div class="form-text" id="cal_preview"></div>
+  </div>
+
+  <!-- Lego Set -->
+  <div class="col-sm-6">
+    <label class="form-label fw-semibold">Lego Set</label>
+    <select class="form-select" name="lego_set_id" id="id_lego_set">
+      <option value="">-- None --</option>
+      {% for ls in lego_sets %}
+      <option value="{{ ls.id }}"
+        {% if session and session.lego_set_id == ls.id %}selected{% endif %}>
+        {{ ls.set_number }} – {{ ls.name }}
+      </option>
+      {% endfor %}
+      <option value="new" {% if session and not session.lego_set_id %}{% endif %}>+ Add new set...</option>
+    </select>
+  </div>
+
+  <!-- New Set fields (hidden by default) -->
+  <div class="col-12" id="new_set_fields" style="display:none;">
+    <div class="card bg-secondary bg-opacity-25 p-3">
+      <p class="fw-semibold mb-2 small text-warning"><i class="bi bi-plus-circle"></i> New Lego Set</p>
+      <div class="row g-2 align-items-end">
+        <div class="col-sm-3">
+          <label class="form-label small">Set Number</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control form-control-sm" id="id_new_set_number" name="new_set_number" placeholder="e.g. 10300" />
+            <button type="button" class="btn btn-outline-warning btn-sm" id="btn_lookup_set" title="Look up on Rebrickable">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+        <div class="col-sm-5">
+          <label class="form-label small">Set Name</label>
+          <input type="text" class="form-control form-control-sm" id="id_new_set_name" name="new_set_name" placeholder="e.g. Back to the Future" />
+        </div>
+        <div class="col-sm-2">
+          <label class="form-label small">Pieces</label>
+          <input type="number" class="form-control form-control-sm" id="id_new_piece_count" name="new_piece_count" placeholder="1872" min="1" />
+        </div>
+        <div class="col-sm-2">
+          <label class="form-label small">Theme</label>
+          <input type="text" class="form-control form-control-sm" id="id_new_theme" name="new_theme" placeholder="Icons" />
+        </div>
+        <div class="col-12">
+          <div id="set_lookup_status" class="form-text"></div>
+        </div>
+        <!-- Hidden image URL populated by lookup -->
+        <input type="hidden" id="id_new_image_url" name="image_url" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Bags -->
+  <div class="col-sm-6">
+    <label class="form-label fw-semibold">Bags Completed</label>
+    <input
+      type="number"
+      class="form-control"
+      name="bags_completed"
+      min="0"
+      placeholder="How many bags finished?"
+      value="{{ session.bags_completed if session and session.bags_completed else '' }}"
+    />
+  </div>
+  <div class="col-sm-6">
+    <label class="form-label fw-semibold">Bag Numbers</label>
+    <input
+      type="text"
+      class="form-control"
+      name="bag_details"
+      id="id_bag_details"
+      placeholder="e.g. 1-3, 5, 7-8"
+      value="{{ session.bag_details if session and session.bag_details else '' }}"
+    />
+    <div class="form-text">Use ranges (1-3) or individual numbers (5), comma-separated</div>
+  </div>
+
+  <!-- Notes -->
+  <div class="col-12">
+    <label class="form-label fw-semibold">Notes</label>
+    <textarea class="form-control" name="notes" rows="2" placeholder="Any notes about this session...">{{ session.notes if session and session.notes else '' }}</textarea>
+  </div>
+</div>
+
+<script>
+(function() {
+  const setSelect = document.getElementById('id_lego_set');
+  const newFields = document.getElementById('new_set_fields');
+  const durInput = document.getElementById('id_duration');
+  const speedInput = document.getElementById('id_speed');
+  const calPreview = document.getElementById('cal_preview');
+  const btnCalc = document.getElementById('btn_calc_cal');
+
+  if (setSelect && newFields) {
+    setSelect.addEventListener('change', function() {
+      newFields.style.display = this.value === 'new' ? 'block' : 'none';
+    });
+  }
+
+  // Rebrickable set lookup
+  const btnLookup = document.getElementById('btn_lookup_set');
+  const setNumInput = document.getElementById('id_new_set_number');
+  const setNameInput = document.getElementById('id_new_set_name');
+  const setPiecesInput = document.getElementById('id_new_piece_count');
+  const setThemeInput = document.getElementById('id_new_theme');
+  const setImageInput = document.getElementById('id_new_image_url');
+  const lookupStatus = document.getElementById('set_lookup_status');
+
+  function lookupSet() {
+    const num = setNumInput ? setNumInput.value.trim() : '';
+    if (!num) return;
+    if (lookupStatus) { lookupStatus.textContent = 'Looking up...'; lookupStatus.className = 'form-text text-info'; }
+    if (btnLookup) btnLookup.disabled = true;
+    fetch(`/api/lookup_set?set_number=${encodeURIComponent(num)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          if (lookupStatus) { lookupStatus.textContent = data.error; lookupStatus.className = 'form-text text-danger'; }
+        } else {
+          if (setNameInput && data.name) setNameInput.value = data.name;
+          if (setPiecesInput && data.piece_count) setPiecesInput.value = data.piece_count;
+          if (setThemeInput && data.theme) setThemeInput.value = data.theme;
+          if (setImageInput && data.image_url) setImageInput.value = data.image_url;
+          if (lookupStatus) {
+            lookupStatus.textContent = `Found: ${data.name} (${data.year}, ${data.piece_count} pieces)`;
+            lookupStatus.className = 'form-text text-success';
+          }
+        }
+      })
+      .catch(() => {
+        if (lookupStatus) { lookupStatus.textContent = 'Lookup failed — fill in manually.'; lookupStatus.className = 'form-text text-warning'; }
+      })
+      .finally(() => { if (btnLookup) btnLookup.disabled = false; });
+  }
+
+  if (btnLookup) btnLookup.addEventListener('click', lookupSet);
+  if (setNumInput) {
+    setNumInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); lookupSet(); }
+    });
+  }
+
+  function previewCalories() {
+    const duration = durInput ? durInput.value : '';
+    const speed = speedInput ? speedInput.value : '';
+    if (!duration) return;
+    fetch(`/api/calc_calories?duration=${duration}&speed=${speed || 3.0}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.calories && calPreview) {
+          calPreview.textContent = `Auto: ~${data.calories} kcal${data.distance ? ' | ' + data.distance + ' mi' : ''}`;
+        }
+      })
+      .catch(() => {});
+  }
+
+  if (btnCalc) {
+    btnCalc.addEventListener('click', previewCalories);
+  }
+  if (durInput) {
+    durInput.addEventListener('blur', previewCalories);
+  }
+  if (speedInput) {
+    speedInput.addEventListener('blur', previewCalories);
+  }
+
+  // Set today's date default
+  const dateInput = document.getElementById('id_date');
+  if (dateInput && !dateInput.value) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    dateInput.value = `${yyyy}-${mm}-${dd}`;
+  }
+
+  // Auto-count bags from bag details input (supports ranges like 1-3 and singles like 5)
+  function countBagsFromDetails(val) {
+    let count = 0;
+    val.split(',').forEach(part => {
+      part = part.trim();
+      const range = part.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (range) {
+        const lo = parseInt(range[1]), hi = parseInt(range[2]);
+        if (!isNaN(lo) && !isNaN(hi) && hi >= lo) count += hi - lo + 1;
+      } else if (/^\d+$/.test(part)) {
+        count += 1;
+      }
+    });
+    return count;
+  }
+
+  const bagDetailsInput = document.getElementById('id_bag_details');
+  const bagsCountInput = document.querySelector('[name="bags_completed"]');
+  if (bagDetailsInput && bagsCountInput) {
+    bagDetailsInput.addEventListener('input', function() {
+      const count = countBagsFromDetails(this.value);
+      if (count > 0) bagsCountInput.value = count;
+    });
+  }
+})();
+</script>

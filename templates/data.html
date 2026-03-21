@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Data & Stats - Lego Workout{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-3">
+  <div class="col">
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-bar-chart-fill lego-accent"></i> Data &amp; Visualizations
+    </h2>
+    <p class="text-muted small mb-0">Your walking &amp; building stats over time</p>
+  </div>
+</div>
+
+<!-- Fun Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card card h-100 text-center py-3">
+      <div class="stat-icon text-warning"><i class="bi bi-geo-alt-fill"></i></div>
+      <div class="stat-value">{{ total_miles }}</div>
+      <div class="stat-label">Total Miles</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card card h-100 text-center py-3">
+      <div class="stat-icon text-danger"><i class="bi bi-fire"></i></div>
+      <div class="stat-value">{{ "{:,}".format(total_calories) }}</div>
+      <div class="stat-label">Calories Burned</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card card h-100 text-center py-3">
+      <div class="stat-icon" style="color:#FFD700"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+      <div class="stat-value">{{ "{:,}".format(unique_pieces) }}</div>
+      <div class="stat-label">Lego Pieces</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card card h-100 text-center py-3">
+      <div class="stat-icon text-info"><i class="bi bi-activity"></i></div>
+      <div class="stat-value">{{ total_sessions }}</div>
+      <div class="stat-label">Total Sessions</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card card h-100 text-center py-3">
+      <div class="stat-icon text-success"><i class="bi bi-trophy-fill"></i></div>
+      <div class="stat-value">{{ sets_completed }}</div>
+      <div class="stat-label">Sets Completed</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card card h-100 text-center py-3">
+      <div class="stat-icon text-warning"><i class="bi bi-lightning-fill"></i></div>
+      <div class="stat-value">{{ fastest }}</div>
+      <div class="stat-label">Fastest mph</div>
+    </div>
+  </div>
+</div>
+
+<!-- Longest session callout -->
+{% if longest %}
+<div class="alert alert-dark border border-warning border-opacity-50 mb-4 py-2">
+  <i class="bi bi-clock-fill text-warning"></i>
+  <strong>Longest session:</strong> {{ longest }} minutes &mdash;
+  {% if fastest %}<strong>Fastest speed:</strong> {{ fastest }} mph{% endif %}
+</div>
+{% endif %}
+
+<!-- Charts Grid -->
+<div class="row g-4">
+
+  <!-- Distance over time -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-geo-alt-fill text-warning"></i> Distance Over Time (miles)
+      </div>
+      <div class="card-body">
+        <canvas id="chartDistance" height="220"></canvas>
+        <div id="noDataDistance" class="text-center text-muted py-4" style="display:none;">
+          <i class="bi bi-graph-up fs-2 d-block mb-2"></i>No distance data yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calories over time -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-fire text-danger"></i> Calories Burned Over Time
+      </div>
+      <div class="card-body">
+        <canvas id="chartCalories" height="220"></canvas>
+        <div id="noDataCalories" class="text-center text-muted py-4" style="display:none;">
+          <i class="bi bi-fire fs-2 d-block mb-2"></i>No calorie data yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly miles bar -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-bar-chart-fill text-info"></i> Miles Per Month
+      </div>
+      <div class="card-body">
+        <canvas id="chartMonthly" height="220"></canvas>
+        <div id="noDataMonthly" class="text-center text-muted py-4" style="display:none;">
+          <i class="bi bi-bar-chart fs-2 d-block mb-2"></i>No monthly data yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Speed trends -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-speedometer2 text-success"></i> Speed Trends (mph)
+      </div>
+      <div class="card-body">
+        <canvas id="chartSpeed" height="220"></canvas>
+        <div id="noDataSpeed" class="text-center text-muted py-4" style="display:none;">
+          <i class="bi bi-speedometer2 fs-2 d-block mb-2"></i>No speed data yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weight trend -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-graph-down text-primary"></i> Weight Over Time (lbs)
+      </div>
+      <div class="card-body">
+        <canvas id="chartWeight" height="220"></canvas>
+        <div id="noDataWeight" class="text-center text-muted py-4" style="display:none;">
+          <i class="bi bi-graph-down fs-2 d-block mb-2"></i>No weight data yet. <a href="/profile">Log weight</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sessions per month -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-calendar-check text-warning"></i> Sessions Per Month
+      </div>
+      <div class="card-body">
+        <canvas id="chartSessionsMonthly" height="220"></canvas>
+        <div id="noDataSM" class="text-center text-muted py-4" style="display:none;">
+          <i class="bi bi-calendar fs-2 d-block mb-2"></i>No session data yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CHART_DEFAULTS = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1a1a2e',
+      titleColor: '#FFD700',
+      bodyColor: '#e0e0e0',
+      borderColor: '#FFD700',
+      borderWidth: 1,
+    }
+  },
+  scales: {
+    x: {
+      ticks: { color: '#aaa', maxRotation: 45, font: { size: 11 } },
+      grid: { color: 'rgba(255,255,255,0.05)' }
+    },
+    y: {
+      ticks: { color: '#aaa', font: { size: 11 } },
+      grid: { color: 'rgba(255,255,255,0.08)' },
+      beginAtZero: true
+    }
+  }
+};
+
+function makeLineChart(id, noDataId, labels, data, color, label) {
+  if (!labels || labels.length === 0) {
+    document.getElementById(id).style.display = 'none';
+    document.getElementById(noDataId).style.display = 'block';
+    return;
+  }
+  const ctx = document.getElementById(id).getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: label,
+        data: data,
+        borderColor: color,
+        backgroundColor: color + '22',
+        fill: true,
+        tension: 0.3,
+        pointBackgroundColor: color,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: JSON.parse(JSON.stringify(CHART_DEFAULTS))
+  });
+}
+
+function makeBarChart(id, noDataId, labels, data, color, label) {
+  if (!labels || labels.length === 0) {
+    document.getElementById(id).style.display = 'none';
+    document.getElementById(noDataId).style.display = 'block';
+    return;
+  }
+  const ctx = document.getElementById(id).getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: label,
+        data: data,
+        backgroundColor: color + 'bb',
+        borderColor: color,
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: JSON.parse(JSON.stringify(CHART_DEFAULTS))
+  });
+}
+
+// Data from Flask
+const distLabels = {{ dist_labels | safe }};
+const distData   = {{ dist_data | safe }};
+const calLabels  = {{ cal_labels | safe }};
+const calData    = {{ cal_data | safe }};
+const spdLabels  = {{ speed_labels | safe }};
+const spdData    = {{ speed_data | safe }};
+const monLabels  = {{ monthly_labels | safe }};
+const monData    = {{ monthly_data | safe }};
+const wtLabels   = {{ wt_labels | safe }};
+const wtData     = {{ wt_data | safe }};
+const smLabels   = {{ sm_labels | safe }};
+const smData     = {{ sm_data | safe }};
+
+makeLineChart('chartDistance',  'noDataDistance',  distLabels, distData, '#FFD700', 'Miles');
+makeLineChart('chartCalories',  'noDataCalories',  calLabels,  calData,  '#CC0000', 'Calories');
+makeBarChart( 'chartMonthly',   'noDataMonthly',   monLabels,  monData,  '#17a2b8', 'Miles');
+makeLineChart('chartSpeed',     'noDataSpeed',     spdLabels,  spdData,  '#28a745', 'mph');
+makeLineChart('chartWeight',    'noDataWeight',    wtLabels,   wtData,   '#6ea8fe', 'lbs');
+makeBarChart( 'chartSessionsMonthly', 'noDataSM',  smLabels,   smData,   '#FFD700', 'Sessions');
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Edit Session - Lego Workout{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-3">
+  <div class="col">
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-pencil-fill lego-accent"></i> Edit Session
+    </h2>
+    <p class="text-muted small mb-0">{{ session.date.strftime("%B %d, %Y") }}</p>
+  </div>
+  <div class="col-auto">
+    <a href="{{ url_for('sessions') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header fw-semibold">
+    <i class="bi bi-activity text-warning"></i> Session Details
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      {% include '_session_form.html' %}
+      <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-lego-yellow fw-bold">
+          <i class="bi bi-check-circle-fill"></i> Update Session
+        </button>
+        <a href="{{ url_for('sessions') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

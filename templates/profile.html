@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Profile - Lego Workout{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-3 align-items-center">
+  <div class="col">
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-person-fill lego-accent"></i> Profile
+    </h2>
+    <p class="text-muted small mb-0">Personal stats &amp; weight log</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Card -->
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-circle text-warning"></i> Personal Info</span>
+        <button class="btn btn-sm btn-outline-warning" data-bs-toggle="collapse" data-bs-target="#editProfileForm">
+          <i class="bi bi-pencil"></i> Edit
+        </button>
+      </div>
+      <div class="card-body">
+        <!-- Display -->
+        <div class="text-center mb-4">
+          <div class="profile-avatar mx-auto mb-3">
+            <i class="bi bi-person-fill"></i>
+          </div>
+          <h4 class="fw-bold mb-0">{{ profile.name }}</h4>
+          {% if profile.age %}<p class="text-muted mb-0">Age {{ profile.age }}</p>{% endif %}
+        </div>
+
+        <ul class="list-group list-group-flush">
+          {% if profile.height_inches %}
+          <li class="list-group-item bg-transparent d-flex justify-content-between">
+            <span class="text-muted"><i class="bi bi-rulers"></i> Height</span>
+            <span class="fw-semibold">
+              {{ profile.height_inches | int }}'{{ ((profile.height_inches % 1) * 12) | int }}"
+              <span class="text-muted small">({{ "%.0f"|format(profile.height_cm) }} cm)</span>
+            </span>
+          </li>
+          {% endif %}
+          {% if profile.current_weight_lbs %}
+          <li class="list-group-item bg-transparent d-flex justify-content-between">
+            <span class="text-muted"><i class="bi bi-bar-chart-fill"></i> Current Weight</span>
+            <span class="fw-semibold">
+              {{ profile.current_weight_lbs }} lbs
+              <span class="text-muted small">({{ "%.1f"|format(profile.weight_kg) }} kg)</span>
+            </span>
+          </li>
+          {% endif %}
+          {% if profile.bmi %}
+          <li class="list-group-item bg-transparent d-flex justify-content-between">
+            <span class="text-muted"><i class="bi bi-heart-pulse-fill"></i> BMI</span>
+            <span class="fw-semibold">
+              {{ profile.bmi }}
+              <span class="badge
+                {% if profile.bmi_category == 'Normal' %}bg-success
+                {% elif profile.bmi_category == 'Underweight' %}bg-info
+                {% else %}bg-warning text-dark{% endif %} ms-1">
+                {{ profile.bmi_category }}
+              </span>
+            </span>
+          </li>
+          {% endif %}
+        </ul>
+
+        <!-- Edit form (collapsed) -->
+        <div class="collapse mt-3" id="editProfileForm">
+          <hr>
+          <form method="POST">
+            <input type="hidden" name="action" value="update_profile" />
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Name</label>
+              <input type="text" class="form-control" name="name" value="{{ profile.name }}" required />
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label fw-semibold">Height (inches)</label>
+                <input type="number" class="form-control" name="height_inches"
+                       step="0.5" min="36" max="96"
+                       value="{{ profile.height_inches or '' }}"
+                       placeholder='e.g. 70 for 5&apos;10"' />
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-semibold">Age</label>
+                <input type="number" class="form-control" name="age"
+                       min="1" max="120"
+                       value="{{ profile.age or '' }}" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-lego-yellow w-100">
+              <i class="bi bi-check-circle-fill"></i> Save Profile
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weight Log -->
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-graph-up text-warning"></i> Weight Log</span>
+        <button class="btn btn-sm btn-outline-warning" data-bs-toggle="collapse" data-bs-target="#addWeightForm">
+          <i class="bi bi-plus-circle"></i> Log Weight
+        </button>
+      </div>
+      <div class="card-body">
+
+        <!-- Add weight form (collapsed) -->
+        <div class="collapse mb-3" id="addWeightForm">
+          <div class="card bg-secondary bg-opacity-15 p-3">
+            <form method="POST">
+              <input type="hidden" name="action" value="add_weight" />
+              <div class="row g-2 align-items-end">
+                <div class="col-sm-4">
+                  <label class="form-label fw-semibold small">Date</label>
+                  <input type="date" class="form-control form-control-sm" name="weight_date"
+                         id="weight_date_input" />
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label fw-semibold small">Weight (lbs) <span class="text-danger">*</span></label>
+                  <input type="number" class="form-control form-control-sm" name="weight_lbs"
+                         step="0.1" min="50" max="500" placeholder="185.5" required />
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label fw-semibold small">Notes</label>
+                  <input type="text" class="form-control form-control-sm" name="weight_notes" placeholder="optional" />
+                </div>
+                <div class="col-sm-2">
+                  <button type="submit" class="btn btn-lego-yellow btn-sm w-100">
+                    <i class="bi bi-plus-circle-fill"></i> Add
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <hr>
+        </div>
+
+        <!-- Weight history table -->
+        {% if weight_logs %}
+        <div class="table-responsive" style="max-height: 360px; overflow-y: auto;">
+          <table class="table table-hover table-dark table-sm mb-0 align-middle">
+            <thead class="sticky-top">
+              <tr>
+                <th>Date</th>
+                <th>Weight (lbs)</th>
+                <th>Change</th>
+                <th>Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for i, log in enumerate(weight_logs) %}
+              <tr {% if i == 0 %}class="table-warning text-dark"{% endif %}>
+                <td class="text-nowrap {% if i == 0 %}fw-bold text-dark{% endif %}">
+                  {{ log.date.strftime("%b %d, %Y") }}
+                  {% if i == 0 %}<span class="badge bg-warning text-dark ms-1 small">Latest</span>{% endif %}
+                </td>
+                <td class="fw-semibold {% if i == 0 %}text-dark{% endif %}">{{ log.weight_lbs }}</td>
+                <td>
+                  {% if i < weight_logs|length - 1 %}
+                    {% set diff = log.weight_lbs - weight_logs[i+1].weight_lbs %}
+                    {% if diff < 0 %}
+                      <span class="text-success small">&#9660; {{ "%.1f"|format(diff | abs) }}</span>
+                    {% elif diff > 0 %}
+                      <span class="text-danger small">&#9650; {{ "%.1f"|format(diff) }}</span>
+                    {% else %}
+                      <span class="text-muted small">&mdash;</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted small">&mdash;</span>
+                  {% endif %}
+                </td>
+                <td class="text-muted small">{{ log.notes or '' }}</td>
+                <td class="text-end">
+                  <form method="POST" class="d-inline"
+                        onsubmit="return confirm('Delete this weight entry?')">
+                    <input type="hidden" name="action" value="delete_weight" />
+                    <input type="hidden" name="log_id" value="{{ log.id }}" />
+                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-graph-up fs-2 d-block mb-2"></i>
+          No weight entries yet. Log your first weight above!
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Default today for weight date input
+const wdInput = document.getElementById('weight_date_input');
+if (wdInput && !wdInput.value) {
+  const today = new Date();
+  wdInput.value = today.toISOString().split('T')[0];
+}
+</script>
+{% endblock %}

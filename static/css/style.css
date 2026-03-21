@@ -1,0 +1,397 @@
+/* ================================================================
+   Lego Workout Tracker - Custom Dark Theme
+   Lego accents: Yellow #FFD700, Red #CC0000
+   ================================================================ */
+
+:root {
+  --lego-yellow: #FFD700;
+  --lego-red: #CC0000;
+  --lego-dark: #1a1a2e;
+  --lego-card-bg: #16213e;
+  --lego-card-border: rgba(255, 215, 0, 0.15);
+  --lego-text-muted: #8a8fa8;
+}
+
+/* Base */
+html, body {
+  height: 100%;
+  background-color: #0f0f1a;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* ----------------------------------------------------------------
+   Navbar
+   ---------------------------------------------------------------- */
+#main-nav {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-bottom: 2px solid var(--lego-yellow);
+  box-shadow: 0 2px 12px rgba(255, 215, 0, 0.15);
+}
+
+.navbar-brand {
+  font-size: 1.3rem;
+  letter-spacing: 0.5px;
+}
+
+.brand-lego {
+  color: var(--lego-yellow);
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.brand-walk {
+  color: #ffffff;
+  font-weight: 300;
+  letter-spacing: 3px;
+}
+
+.lego-stud {
+  color: var(--lego-red);
+  font-size: 0.9em;
+  margin-right: 4px;
+}
+
+.nav-link {
+  color: #c0c8e8 !important;
+  border-radius: 6px;
+  padding: 6px 12px !important;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--lego-yellow) !important;
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.nav-link.active {
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------
+   Cards
+   ---------------------------------------------------------------- */
+.card {
+  background-color: var(--lego-card-bg);
+  border: 1px solid var(--lego-card-border);
+  border-radius: 10px;
+}
+
+.card-header {
+  background: rgba(255, 215, 0, 0.06);
+  border-bottom: 1px solid var(--lego-card-border);
+  border-radius: 10px 10px 0 0 !important;
+}
+
+/* ----------------------------------------------------------------
+   Stat Cards
+   ---------------------------------------------------------------- */
+.stat-card {
+  background: linear-gradient(145deg, #16213e, #1a2545);
+  border: 1px solid var(--lego-card-border);
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.12);
+}
+
+.stat-icon {
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--lego-text-muted);
+}
+
+/* ----------------------------------------------------------------
+   Lego accent color helpers
+   ---------------------------------------------------------------- */
+.lego-accent {
+  color: var(--lego-yellow);
+}
+
+.lego-red {
+  color: var(--lego-red);
+}
+
+/* ----------------------------------------------------------------
+   Buttons
+   ---------------------------------------------------------------- */
+.btn-lego-yellow {
+  background-color: var(--lego-yellow);
+  border-color: var(--lego-yellow);
+  color: #1a1a2e;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-lego-yellow:hover,
+.btn-lego-yellow:focus {
+  background-color: #e6c200;
+  border-color: #e6c200;
+  color: #1a1a2e;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+}
+
+/* ----------------------------------------------------------------
+   Tables
+   ---------------------------------------------------------------- */
+.table-dark {
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: rgba(255, 215, 0, 0.06);
+}
+
+.table thead th {
+  color: var(--lego-yellow);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------------
+   Lego Set Cards
+   ---------------------------------------------------------------- */
+.set-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.set-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.14);
+}
+
+.set-img {
+  height: 160px;
+  object-fit: contain;
+  background: #0d0d1a;
+  border-radius: 9px 9px 0 0;
+  padding: 10px;
+}
+
+.set-img-placeholder {
+  height: 160px;
+  background: linear-gradient(135deg, #1a1a2e, #0d0d1a);
+  border-radius: 9px 9px 0 0;
+}
+
+.set-img-placeholder-done {
+  background: linear-gradient(135deg, #0d2b0d, #0a1a0a);
+}
+
+/* ----------------------------------------------------------------
+   Profile Avatar
+   ---------------------------------------------------------------- */
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--lego-yellow), #e6a800);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: #1a1a2e;
+}
+
+/* ----------------------------------------------------------------
+   Forms
+   ---------------------------------------------------------------- */
+.form-control,
+.form-select {
+  background-color: #1a2035;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #e0e0e0;
+  border-radius: 6px;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: #1e2640;
+  border-color: var(--lego-yellow);
+  color: #e0e0e0;
+  box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.2);
+}
+
+.form-control::placeholder {
+  color: #555e7a;
+}
+
+.form-label {
+  color: #b0bac8;
+  font-size: 0.875rem;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 70px;
+}
+
+/* ----------------------------------------------------------------
+   Alerts
+   ---------------------------------------------------------------- */
+.alert {
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.alert-success {
+  background: rgba(40, 167, 69, 0.15);
+  border-color: rgba(40, 167, 69, 0.4);
+  color: #7bdb9a;
+}
+
+.alert-danger {
+  background: rgba(204, 0, 0, 0.15);
+  border-color: rgba(204, 0, 0, 0.4);
+  color: #f08080;
+}
+
+.alert-warning {
+  background: rgba(255, 215, 0, 0.12);
+  border-color: rgba(255, 215, 0, 0.35);
+  color: #ffe066;
+}
+
+.alert-info {
+  background: rgba(23, 162, 184, 0.15);
+  border-color: rgba(23, 162, 184, 0.4);
+  color: #7dd4e0;
+}
+
+/* ----------------------------------------------------------------
+   Modals
+   ---------------------------------------------------------------- */
+.modal-content {
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+}
+
+.modal-backdrop.show {
+  opacity: 0.7;
+}
+
+/* ----------------------------------------------------------------
+   List groups
+   ---------------------------------------------------------------- */
+.list-group-item {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.06);
+  color: #e0e0e0;
+  padding: 0.6rem 0;
+}
+
+/* ----------------------------------------------------------------
+   Footer
+   ---------------------------------------------------------------- */
+.footer {
+  background: #0f0f1a;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+  color: var(--lego-text-muted);
+  font-size: 0.78rem;
+}
+
+/* ----------------------------------------------------------------
+   Scrollbar styling (webkit)
+   ---------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f0f1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a3050;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lego-yellow);
+}
+
+/* ----------------------------------------------------------------
+   Badges
+   ---------------------------------------------------------------- */
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ----------------------------------------------------------------
+   Responsive tweaks for small screens (Raspberry Pi touch)
+   ---------------------------------------------------------------- */
+@media (max-width: 576px) {
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .stat-icon {
+    font-size: 1.4rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+  }
+
+  .table {
+    font-size: 0.8rem;
+  }
+
+  .set-img, .set-img-placeholder {
+    height: 120px;
+  }
+}
+
+/* ----------------------------------------------------------------
+   Utility
+   ---------------------------------------------------------------- */
+.border-secondary {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.text-muted {
+  color: var(--lego-text-muted) !important;
+}
+
+/* Collapse transition polish */
+.collapsing {
+  transition: height 0.2s ease;
+}
+
+/* Number display in data page */
+.data-big {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--lego-yellow);
+}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Sessions - Lego Workout{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-3 align-items-center">
+  <div class="col">
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-activity lego-accent"></i> Session Log
+    </h2>
+    <p class="text-muted small mb-0">{{ sessions|length }} session{{ 's' if sessions|length != 1 else '' }} logged</p>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-lego-yellow fw-bold" data-bs-toggle="modal" data-bs-target="#addSessionModal">
+      <i class="bi bi-plus-circle-fill"></i> Add Session
+    </button>
+  </div>
+</div>
+
+<!-- Sessions table -->
+<div class="card">
+  <div class="card-body p-0">
+    {% if sessions %}
+    <div class="table-responsive">
+      <table class="table table-hover table-dark mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Distance</th>
+            <th>Speed</th>
+            <th>Calories</th>
+            <th>Lego Set</th>
+            <th>Bags</th>
+            <th>Notes</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sessions %}
+          <tr>
+            <td class="text-nowrap fw-semibold">{{ s.date.strftime("%b %d, %Y") }}</td>
+            <td class="text-nowrap">{{ s.duration_minutes | int }} min</td>
+            <td class="text-nowrap">
+              {% if s.distance_miles %}
+                <span class="text-warning fw-semibold">{{ "%.2f"|format(s.distance_miles) }}</span> mi
+              {% else %}—{% endif %}
+            </td>
+            <td class="text-nowrap">
+              {% if s.avg_speed_mph %}{{ "%.1f"|format(s.avg_speed_mph) }} mph{% else %}—{% endif %}
+            </td>
+            <td class="text-nowrap">
+              {% if s.calories_burned %}
+                <span class="text-danger">{{ s.calories_burned | int }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if s.lego_set %}
+                <span class="badge bg-warning text-dark me-1">{{ s.lego_set.set_number }}</span>
+                <span class="small">{{ s.lego_set.name[:25] }}{% if s.lego_set.name|length > 25 %}…{% endif %}</span>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.bags_completed %}
+                <span class="badge bg-secondary">{{ s.bags_completed }} bag{{ 's' if s.bags_completed != 1 else '' }}</span>
+                {% if s.bag_details %}
+                  <span class="text-muted small">({{ s.bag_details }})</span>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td class="text-muted small" style="max-width:160px;">
+              {% if s.notes %}
+                <span title="{{ s.notes }}">{{ s.notes[:40] }}{% if s.notes|length > 40 %}…{% endif %}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="text-end text-nowrap">
+              <a href="{{ url_for('edit_session', session_id=s.id) }}" class="btn btn-sm btn-outline-secondary me-1">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="POST" action="{{ url_for('delete_session', session_id=s.id) }}" class="d-inline"
+                    onsubmit="return confirm('Delete this session?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-activity fs-1 d-block mb-3"></i>
+      <p class="mb-3">No sessions logged yet.</p>
+      <button class="btn btn-lego-yellow" data-bs-toggle="modal" data-bs-target="#addSessionModal">
+        <i class="bi bi-plus-circle-fill"></i> Log Your First Session
+      </button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add Session Modal -->
+<div class="modal fade" id="addSessionModal" tabindex="-1" aria-labelledby="addSessionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content bg-dark">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="addSessionModalLabel">
+          <i class="bi bi-plus-circle-fill text-warning"></i> Add New Session
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('add_session') }}">
+        <div class="modal-body">
+          {% include '_session_form.html' %}
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-lego-yellow fw-bold">
+            <i class="bi bi-check-circle-fill"></i> Save Session
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

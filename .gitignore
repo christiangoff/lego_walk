@@ -1,0 +1,21 @@
+# Database
+*.db
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Environment / secrets
+.env
+*.env
+
+# OS
+.DS_Store
+
+# Logs
+*.log

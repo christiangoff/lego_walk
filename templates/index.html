@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Lego Workout{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-3 align-items-center">
+  <div class="col">
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-speedometer2 lego-accent"></i>
+      Dashboard
+    </h2>
+    <p class="text-muted small mb-0">Welcome back, {{ profile.name }}!</p>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-lego-yellow fw-bold" data-bs-toggle="modal" data-bs-target="#quickAddModal">
+      <i class="bi bi-plus-circle-fill"></i> Quick Add Session
+    </button>
+  </div>
+</div>
+
+<!-- Top stat cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-warning"><i class="bi bi-geo-alt-fill"></i></div>
+        <div class="stat-value">{{ total_miles }}</div>
+        <div class="stat-label">Total Miles</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-danger"><i class="bi bi-fire"></i></div>
+        <div class="stat-value">{{ "{:,}".format(total_calories) }}</div>
+        <div class="stat-label">Calories Burned</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-info"><i class="bi bi-clock-history"></i></div>
+        <div class="stat-value">{{ total_sessions }}</div>
+        <div class="stat-label">Total Sessions</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon" style="color:#FFD700"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+        <div class="stat-value">{{ sets_in_progress }}</div>
+        <div class="stat-label">Sets in Progress</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- This week + sets completed -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-calendar-week text-warning"></i> This Week
+      </div>
+      <div class="card-body">
+        <div class="row text-center g-0">
+          <div class="col-6 border-end">
+            <div class="h3 mb-0 text-warning fw-bold">{{ week_miles }}</div>
+            <div class="small text-muted">Miles</div>
+          </div>
+          <div class="col-6">
+            <div class="h3 mb-0 text-info fw-bold">{{ week_sessions }}</div>
+            <div class="small text-muted">Sessions</div>
+          </div>
+        </div>
+        <hr class="my-2">
+        <div class="row text-center g-0">
+          <div class="col-6 border-end">
+            <div class="h5 mb-0 text-muted fw-bold">{{ total_minutes // 60 }}h {{ total_minutes % 60 }}m</div>
+            <div class="small text-muted">Total Walk Time</div>
+          </div>
+          <div class="col-6">
+            <div class="h5 mb-0 text-success fw-bold">{{ sets_completed }}</div>
+            <div class="small text-muted">Sets Completed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-person-fill text-warning"></i> Profile Snapshot
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          <li class="d-flex justify-content-between py-1 border-bottom">
+            <span class="text-muted">Name</span>
+            <span class="fw-semibold">{{ profile.name }}</span>
+          </li>
+          {% if profile.current_weight_lbs %}
+          <li class="d-flex justify-content-between py-1 border-bottom">
+            <span class="text-muted">Weight</span>
+            <span class="fw-semibold">{{ profile.current_weight_lbs }} lbs</span>
+          </li>
+          {% endif %}
+          {% if profile.bmi %}
+          <li class="d-flex justify-content-between py-1 border-bottom">
+            <span class="text-muted">BMI</span>
+            <span class="fw-semibold">{{ profile.bmi }}
+              <span class="badge
+                {% if profile.bmi_category == 'Normal' %}bg-success
+                {% elif profile.bmi_category == 'Underweight' %}bg-info
+                {% else %}bg-warning text-dark{% endif %} ms-1 small">
+                {{ profile.bmi_category }}
+              </span>
+            </span>
+          </li>
+          {% endif %}
+          {% if profile.age %}
+          <li class="d-flex justify-content-between py-1">
+            <span class="text-muted">Age</span>
+            <span class="fw-semibold">{{ profile.age }}</span>
+          </li>
+          {% endif %}
+        </ul>
+        {% if not profile.current_weight_lbs %}
+        <a href="{{ url_for('profile') }}" class="btn btn-sm btn-outline-warning mt-2">
+          <i class="bi bi-pencil"></i> Complete Profile
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Sessions -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center fw-semibold">
+    <span><i class="bi bi-activity text-warning"></i> Recent Sessions</span>
+    <a href="{{ url_for('sessions') }}" class="btn btn-sm btn-outline-warning">View All</a>
+  </div>
+  <div class="card-body p-0">
+    {% if recent_sessions %}
+    <div class="table-responsive">
+      <table class="table table-hover table-dark mb-0 align-middle">
+        <thead class="table-header-dark">
+          <tr>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Distance</th>
+            <th>Speed</th>
+            <th>Calories</th>
+            <th>Set</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in recent_sessions %}
+          <tr>
+            <td>{{ s.date.strftime("%b %d, %Y") }}</td>
+            <td>{{ s.duration_minutes | int }} min</td>
+            <td>{{ "%.2f"|format(s.distance_miles) if s.distance_miles else "—" }} mi</td>
+            <td>{{ "%.1f"|format(s.avg_speed_mph) if s.avg_speed_mph else "—" }} mph</td>
+            <td>{{ s.calories_burned | int if s.calories_burned else "—" }}</td>
+            <td>
+              {% if s.lego_set %}
+                <span class="badge bg-warning text-dark">{{ s.lego_set.set_number }}</span>
+                <span class="small d-none d-md-inline">{{ s.lego_set.name[:20] }}{% if s.lego_set.name|length > 20 %}…{% endif %}</span>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted">
+      <i class="bi bi-emoji-smile fs-2 d-block mb-2"></i>
+      No sessions yet. Add your first session to get started!
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Quick Add Session Modal -->
+<div class="modal fade" id="quickAddModal" tabindex="-1" aria-labelledby="quickAddModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content bg-dark">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="quickAddModalLabel">
+          <i class="bi bi-plus-circle-fill text-warning"></i> Quick Add Session
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('add_session') }}">
+        <div class="modal-body">
+          {% include '_session_form.html' %}
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-lego-yellow fw-bold">
+            <i class="bi bi-check-circle-fill"></i> Save Session
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-dismiss alerts after 4 seconds
+setTimeout(() => {
+  document.querySelectorAll('.alert').forEach(el => {
+    const bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+    bsAlert.close();
+  });
+}, 4000);
+</script>
+{% endblock %}
