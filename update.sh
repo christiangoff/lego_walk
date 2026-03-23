@@ -7,8 +7,11 @@ set -e
 echo "Pulling latest code..."
 git pull
 
+echo "Installing/updating dependencies..."
+venv/bin/pip install -r requirements.txt -q
+
 echo "Running migrations..."
-python3 migrate.py
+venv/bin/python3 migrate.py
 
 echo "Restarting service..."
 sudo systemctl restart lego_walk

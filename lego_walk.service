@@ -7,8 +7,8 @@ Type=simple
 User=christiangoff
 WorkingDirectory=/home/christiangoff/lego_walk
 Environment="REBRICKABLE_API_KEY=a623b0e5ccd1c8dbae7ddf13cc1f8fe8"
-ExecStartPre=/usr/bin/python3 /home/christiangoff/lego_walk/migrate.py
-ExecStart=/usr/bin/python3 /home/christiangoff/lego_walk/app.py
+ExecStartPre=/home/christiangoff/lego_walk/venv/bin/python3 /home/christiangoff/lego_walk/migrate.py
+ExecStart=/home/christiangoff/lego_walk/venv/bin/python3 /home/christiangoff/lego_walk/app.py
 Restart=on-failure
 RestartSec=5
 
