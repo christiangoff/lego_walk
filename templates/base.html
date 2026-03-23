@@ -3,7 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Lego Workout Tracker{% endblock %}</title>
+  <title>{% block title %}StudStep{% endblock %}</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="StudStep" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="/static/icons/icon-192.png" />
 
   <!-- Bootstrap 5 -->
   <link
@@ -26,9 +35,9 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top" id="main-nav">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-      <span class="lego-stud">&#9632;</span>
-      <span class="brand-lego">LEGO</span><span class="brand-walk"> WALK</span>
+    <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="{{ url_for('index') }}">
+      <img src="{{ url_for('static', filename='icons/studstep_logo_noBackground.png') }}" alt="StudStep" height="32">
+      <span><span class="brand-lego">STUD</span><span class="brand-walk">STEP</span></span>
     </a>
     <button
       class="navbar-toggler"
@@ -109,7 +118,7 @@
 
 <!-- Footer -->
 <footer class="footer mt-auto py-2 text-center text-muted small">
-  <span class="lego-accent">Lego Workout Tracker</span> &mdash; Keep walking, keep building.
+  <span class="lego-accent">StudStep</span> &mdash; Keep walking, keep building.
 </footer>
 
 <!-- Bootstrap JS -->
