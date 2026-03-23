@@ -4,11 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/lego_walk
+User=christiangoff
+WorkingDirectory=/home/christiangoff/lego_walk
 Environment="REBRICKABLE_API_KEY=a623b0e5ccd1c8dbae7ddf13cc1f8fe8"
-ExecStartPre=/usr/bin/python3 /home/pi/lego_walk/migrate.py
-ExecStart=/usr/bin/python3 /home/pi/lego_walk/app.py
+ExecStartPre=/usr/bin/python3 /home/christiangoff/lego_walk/migrate.py
+ExecStart=/usr/bin/python3 /home/christiangoff/lego_walk/app.py
 Restart=on-failure
 RestartSec=5
 
