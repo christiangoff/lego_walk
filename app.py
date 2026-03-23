@@ -317,7 +317,7 @@ def edit_session(session_id):
             db.session.rollback()
             flash(f"Error updating session: {e}", "danger")
 
-    return render_template("edit_session.html", session=s, lego_sets=lego_sets)
+    return render_template("edit_session.html", wsession=s, lego_sets=lego_sets)
 
 
 @app.route("/sessions/delete/<int:session_id>", methods=["POST"])
