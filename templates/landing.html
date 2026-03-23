@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudStep — Walk while you build</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="StudStep" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="/static/icons/icon-192.png" />
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <style>
+    .hero {
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      background: radial-gradient(ellipse at 60% 40%, #2a1a4e 0%, #1a1a2e 60%, #0d0d1a 100%);
+    }
+    .hero-logo {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+    }
+    .feature-icon {
+      font-size: 2rem;
+      line-height: 1;
+    }
+    .section-dark {
+      background: #12121f;
+    }
+    .section-mid {
+      background: #1a1a2e;
+    }
+    .brand-lego  { color: #f5c800; }
+    .brand-walk  { color: #e3e3e3; }
+    .divider-lego {
+      height: 4px;
+      width: 60px;
+      background: #f5c800;
+      border-radius: 2px;
+      margin: 0.75rem 0 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark sticky-top" style="background: rgba(13,13,26,0.95); backdrop-filter: blur(8px);">
+  <div class="container">
+    <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
+      <img src="{{ url_for('static', filename='icons/studstep_logo_noBackground.png') }}" alt="StudStep" height="32">
+      <span><span class="brand-lego">STUD</span><span class="brand-walk">STEP</span></span>
+    </a>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm">Sign In</a>
+      <a href="mailto:christian.goff@gmail.com?subject=StudStep%20Access%20Request" class="btn btn-warning btn-sm fw-bold">Request Access</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container text-center py-5">
+    <img src="{{ url_for('static', filename='icons/studstep_logo_noBackground.png') }}" alt="StudStep" class="hero-logo mb-4">
+    <h1 class="display-4 fw-bold mb-2">
+      <span class="brand-lego">STUD</span><span class="brand-walk">STEP</span>
+    </h1>
+    <p class="lead text-muted mb-4" style="max-width: 520px; margin: 0 auto;">
+      Turn every bag of bricks into a workout milestone. Track your treadmill sessions while you build Lego sets — one step at a time.
+    </p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-4">
+        <i class="bi bi-box-arrow-in-right"></i> Sign In
+      </a>
+      <a href="mailto:christian.goff@gmail.com?subject=StudStep%20Access%20Request" class="btn btn-warning btn-lg px-4 fw-bold">
+        <i class="bi bi-envelope-fill"></i> Request Access
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Overview -->
+<section class="section-dark py-5">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-md-6">
+        <div class="divider-lego"></div>
+        <h2 class="fw-bold mb-3">Walk while you build.</h2>
+        <p class="text-muted">
+          StudStep is a private fitness tracker built for people who love Lego and want to stay active.
+          Log every treadmill session, link it to a set you're building, and watch your stats grow
+          alongside your collection.
+        </p>
+        <ul class="list-unstyled text-muted mt-3">
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-warning me-2"></i>Track distance, speed, duration, and calories</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-warning me-2"></i>Link sessions to specific Lego sets and bags</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-warning me-2"></i>See your progress grow build by build</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <img src="{{ url_for('static', filename='screenshots/dashboard.jpeg') }}" alt="Dashboard" class="img-fluid rounded-3 shadow">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section-mid py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="divider-lego mx-auto"></div>
+      <h2 class="fw-bold">Features</h2>
+      <p class="text-muted">Everything you need to track your Lego walking journey.</p>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- Session Logging -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card border-0 h-100" style="background:#1e1e2e;">
+          <div class="card-body">
+            <div class="feature-icon text-warning mb-3"><i class="bi bi-activity"></i></div>
+            <h5 class="fw-bold">Session Logging</h5>
+            <p class="text-muted small">Record each walk with distance, speed, duration, calories, and which Lego bags you finished.</p>
+            <img src="{{ url_for('static', filename='screenshots/session_logging.jpeg') }}" alt="Session logging" class="img-fluid rounded-3 mt-3 shadow">
+          </div>
+        </div>
+      </div>
+
+      <!-- Set Gallery -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card border-0 h-100" style="background:#1e1e2e;">
+          <div class="card-body">
+            <div class="feature-icon text-warning mb-3"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+            <h5 class="fw-bold">Set Gallery</h5>
+            <p class="text-muted small">Browse every set you've worked on, with images pulled from Rebrickable, piece counts, and completion status.</p>
+            <img src="{{ url_for('static', filename='screenshots/set_gallery.jpeg') }}" alt="Set gallery" class="img-fluid rounded-3 mt-3 shadow">
+          </div>
+        </div>
+      </div>
+
+      <!-- Set Detail -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card border-0 h-100" style="background:#1e1e2e;">
+          <div class="card-body">
+            <div class="feature-icon text-warning mb-3"><i class="bi bi-bar-chart-steps"></i></div>
+            <h5 class="fw-bold">Per-Set Breakdown</h5>
+            <p class="text-muted small">Drill into any set to see every session, total miles walked, calories burned, and pieces built.</p>
+            <img src="{{ url_for('static', filename='screenshots/per_set_breakdown.jpeg') }}" alt="Per-set breakdown" class="img-fluid rounded-3 mt-3 shadow">
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats & Charts -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card border-0 h-100" style="background:#1e1e2e;">
+          <div class="card-body">
+            <div class="feature-icon text-warning mb-3"><i class="bi bi-bar-chart-fill"></i></div>
+            <h5 class="fw-bold">Stats &amp; Charts</h5>
+            <p class="text-muted small">Visualise your activity over time — distance trends, weekly summaries, and calorie history.</p>
+            <img src="{{ url_for('static', filename='screenshots/stats_and_charts.jpeg') }}" alt="Stats and charts" class="img-fluid rounded-3 mt-3 shadow">
+          </div>
+        </div>
+      </div>
+
+      <!-- Weight Tracking -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card border-0 h-100" style="background:#1e1e2e;">
+          <div class="card-body">
+            <div class="feature-icon text-warning mb-3"><i class="bi bi-speedometer2"></i></div>
+            <h5 class="fw-bold">Weight &amp; Profile</h5>
+            <p class="text-muted small">Log your weight over time, track BMI, and keep your profile up to date for accurate calorie estimates.</p>
+            <img src="{{ url_for('static', filename='screenshots/weight_profile.jpeg') }}" alt="Weight and profile" class="img-fluid rounded-3 mt-3 shadow">
+          </div>
+        </div>
+      </div>
+
+      <!-- Rebrickable -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card border-0 h-100" style="background:#1e1e2e;">
+          <div class="card-body">
+            <div class="feature-icon text-warning mb-3"><i class="bi bi-search"></i></div>
+            <h5 class="fw-bold">Rebrickable Lookup</h5>
+            <p class="text-muted small">Enter a set number and auto-fill the name, piece count, theme, and cover image from Rebrickable.</p>
+            <img src="{{ url_for('static', filename='screenshots/Rebrickable.jpeg') }}" alt="Rebrickable lookup" class="img-fluid rounded-3 mt-3 shadow">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA Footer -->
+<section class="section-dark py-5 text-center">
+  <div class="container">
+    <div class="divider-lego mx-auto"></div>
+    <h3 class="fw-bold mb-2">Ready to start walking?</h3>
+    <p class="text-muted mb-4">StudStep is invite-only. Sign in if you have an account, or reach out to request access.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a href="{{ url_for('login') }}" class="btn btn-outline-light px-4">
+        <i class="bi bi-box-arrow-in-right"></i> Sign In
+      </a>
+      <a href="mailto:christian.goff@gmail.com?subject=StudStep%20Access%20Request" class="btn btn-warning px-4 fw-bold">
+        <i class="bi bi-envelope-fill"></i> Request Access
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="py-3 text-center text-muted small" style="background:#0d0d1a;">
+  <span class="brand-lego">STUD</span><span class="brand-walk">STEP</span> &mdash; Keep walking, keep building.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

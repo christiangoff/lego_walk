@@ -67,7 +67,7 @@ def get_or_create_profile(user_id):
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for("index"))
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         display_name = request.form.get("display_name", "").strip()
@@ -101,7 +101,7 @@ def register():
         db.session.commit()
         login_user(user)
         flash(f"Welcome, {user.display_name}!", "success")
-        return redirect(url_for("index"))
+        return redirect(url_for("dashboard"))
 
     return render_template("register.html")
 
@@ -111,7 +111,7 @@ def register():
 def invites():
     if not current_user.is_admin:
         flash("You don't have permission to access that page.", "danger")
-        return redirect(url_for("index"))
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
         code = InviteCode(
             code=secrets.token_urlsafe(8),
@@ -127,14 +127,14 @@ def invites():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("index"))
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
             login_user(user)
-            return redirect(url_for("index"))
+            return redirect(url_for("dashboard"))
         flash("Invalid email or password.", "danger")
 
     return render_template("login.html")
@@ -150,8 +150,15 @@ def logout():
 #  Dashboard
 # --------------------------------------------------------------------------- #
 @app.route("/")
+def landing():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+    return render_template("landing.html")
+
+
+@app.route("/dashboard")
 @login_required
-def index():
+def dashboard():
     profile = get_or_create_profile(current_user.id)
     sessions = Session.query.filter_by(user_id=current_user.id).order_by(Session.date.desc()).all()
     sets_in_progress = LegoSet.query.filter_by(user_id=current_user.id, completed=False).count()
