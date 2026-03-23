@@ -236,9 +236,10 @@ def landing():
 @login_required
 def dashboard():
     profile = get_or_create_profile(current_user.id)
-    sessions = Session.query.filter_by(user_id=current_user.id).order_by(Session.date.desc()).all()
-    sets_in_progress = LegoSet.query.filter_by(user_id=current_user.id, completed=False).count()
-    sets_completed = LegoSet.query.filter_by(user_id=current_user.id, completed=True).count()
+    sessions = Session.query.filter_by(user_id=current_user.id).order_by(Session.date.desc(), Session.created_at.desc()).all()
+    lego_sets = LegoSet.query.filter_by(user_id=current_user.id).order_by(LegoSet.name).all()
+    sets_in_progress = sum(1 for s in lego_sets if not s.completed)
+    sets_completed = sum(1 for s in lego_sets if s.completed)
 
     total_miles = round(sum(s.distance_miles or 0 for s in sessions), 2)
     total_calories = round(sum(s.calories_burned or 0 for s in sessions), 0)
@@ -258,6 +259,7 @@ def dashboard():
         "index.html",
         profile=profile,
         recent_sessions=recent_sessions,
+        lego_sets=lego_sets,
         total_miles=total_miles,
         total_calories=int(total_calories),
         total_sessions=total_sessions,
@@ -276,7 +278,7 @@ def dashboard():
 @app.route("/sessions")
 @login_required
 def sessions():
-    all_sessions = Session.query.filter_by(user_id=current_user.id).order_by(Session.date.desc()).all()
+    all_sessions = Session.query.filter_by(user_id=current_user.id).order_by(Session.date.desc(), Session.created_at.desc()).all()
     lego_sets = LegoSet.query.filter_by(user_id=current_user.id).order_by(LegoSet.name).all()
     return render_template("sessions.html", sessions=all_sessions, lego_sets=lego_sets)
 
