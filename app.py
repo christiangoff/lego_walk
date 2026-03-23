@@ -416,7 +416,9 @@ def profile():
                     notes=request.form.get("weight_notes", "").strip() or None,
                 )
                 db.session.add(log)
-                p.current_weight_lbs = weight
+                db.session.flush()
+                latest = WeightLog.query.order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).first()
+                p.current_weight_lbs = latest.weight_lbs if latest else weight
                 db.session.commit()
                 flash(f"Weight entry ({weight} lbs) added!", "success")
             except Exception as e:
