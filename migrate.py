@@ -55,32 +55,46 @@ def run_migrations():
                     else:
                         print(f"  [!!] {description} FAILED: {e}")
 
-        # After migrations, assign existing data to a default user
-        with db.engine.connect() as conn:
-            existing = conn.execute(text("SELECT id FROM user LIMIT 1")).fetchone()
-            if not existing:
-                from werkzeug.security import generate_password_hash
-                conn.execute(text("""
-                    INSERT INTO user (email, display_name, password_hash)
-                    VALUES ('admin@studstep.local', 'Admin', :hash)
-                """), {"hash": generate_password_hash("studstep123", method="pbkdf2:sha256")})
-                conn.commit()
-                print("  [**] Default user created: admin@studstep.local / studstep123")
+        ADMIN_EMAIL = "christian.goff@gmail.com"
+        ADMIN_NAME = "Christian"
+        ADMIN_TEMP_PASSWORD = "studstep123"
 
-            user_row = conn.execute(text("SELECT id FROM user LIMIT 1")).fetchone()
-            uid = user_row[0]
+        # Ensure the admin account exists and is marked as admin
+        with db.engine.connect() as conn:
+            from werkzeug.security import generate_password_hash
+            admin_row = conn.execute(
+                text("SELECT id FROM user WHERE email = :email"), {"email": ADMIN_EMAIL}
+            ).fetchone()
+
+            if not admin_row:
+                conn.execute(text("""
+                    INSERT INTO user (email, display_name, password_hash, is_admin)
+                    VALUES (:email, :name, :hash, 1)
+                """), {
+                    "email": ADMIN_EMAIL,
+                    "name": ADMIN_NAME,
+                    "hash": generate_password_hash(ADMIN_TEMP_PASSWORD, method="pbkdf2:sha256"),
+                })
+                conn.commit()
+                print(f"  [**] Admin account created: {ADMIN_EMAIL} / {ADMIN_TEMP_PASSWORD}")
+            else:
+                conn.execute(text(
+                    "UPDATE user SET is_admin = 1 WHERE email = :email"
+                ), {"email": ADMIN_EMAIL})
+                conn.commit()
+                print(f"  [OK] Admin flag set for {ADMIN_EMAIL}")
+
+            # Get admin user id
+            admin_row = conn.execute(
+                text("SELECT id FROM user WHERE email = :email"), {"email": ADMIN_EMAIL}
+            ).fetchone()
+            uid = admin_row[0]
+
+            # Assign any unowned data to the admin account
             for table in ("profile", "weight_log", "lego_set", "session"):
                 conn.execute(text(f"UPDATE {table} SET user_id = :uid WHERE user_id IS NULL"), {"uid": uid})
             conn.commit()
-            print(f"  [OK] Existing data assigned to user id={uid}")
-
-        # Ensure the designated admin account has is_admin=1
-        with db.engine.connect() as conn:
-            conn.execute(text(
-                "UPDATE user SET is_admin = 1 WHERE email = 'christian.goff@gmail.com'"
-            ))
-            conn.commit()
-            print("  [OK] Admin flag set for christian.goff@gmail.com")
+            print(f"  [OK] Unowned data assigned to {ADMIN_EMAIL} (id={uid})")
 
         print("Migration complete.")
 
