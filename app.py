@@ -428,7 +428,7 @@ def profile():
                 log = WeightLog.query.get_or_404(log_id)
                 db.session.delete(log)
                 # Update current weight to latest remaining entry
-                latest = WeightLog.query.order_by(WeightLog.date.desc()).first()
+                latest = WeightLog.query.order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).first()
                 p.current_weight_lbs = latest.weight_lbs if latest else None
                 db.session.commit()
                 flash("Weight entry deleted.", "warning")
@@ -437,7 +437,7 @@ def profile():
                 flash(f"Error deleting weight: {e}", "danger")
         return redirect(url_for("profile"))
 
-    weight_logs = WeightLog.query.order_by(WeightLog.date.desc()).all()
+    weight_logs = WeightLog.query.order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).all()
     return render_template("profile.html", profile=p, weight_logs=weight_logs)
 
 
