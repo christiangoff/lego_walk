@@ -93,6 +93,14 @@
             <i class="bi bi-bar-chart-fill"></i> Data
           </a>
         </li>
+        <li class="nav-item">
+          <a
+            class="nav-link {% if request.endpoint == 'invites' %}active{% endif %}"
+            href="{{ url_for('invites') }}"
+          >
+            <i class="bi bi-ticket-perforated-fill"></i> Invites
+          </a>
+        </li>
         <li class="nav-item d-flex align-items-center ms-2">
           <span class="text-muted small me-2">
             <i class="bi bi-person-circle"></i> {{ current_user.display_name }}

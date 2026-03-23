@@ -1,11 +1,12 @@
 import os
 import json
+import secrets
 import urllib.request
 import urllib.parse
 from datetime import date, datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Profile, WeightLog, LegoSet, Session
+from models import db, User, InviteCode, Profile, WeightLog, LegoSet, Session
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "lego-workout-secret-key-2024")
@@ -72,9 +73,15 @@ def register():
         display_name = request.form.get("display_name", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
+        invite_code = request.form.get("invite_code", "").strip()
 
-        if not email or not display_name or not password or not confirm_password:
+        if not email or not display_name or not password or not confirm_password or not invite_code:
             flash("All fields are required.", "danger")
+            return render_template("register.html")
+
+        code = InviteCode.query.filter_by(code=invite_code).first()
+        if not code or code.is_used:
+            flash("Invalid or already used invite code.", "danger")
             return render_template("register.html")
 
         if password != confirm_password:
@@ -88,12 +95,30 @@ def register():
         user = User(email=email, display_name=display_name)
         user.set_password(password)
         db.session.add(user)
+        db.session.flush()
+        code.used_by_id = user.id
+        code.used_at = datetime.utcnow()
         db.session.commit()
         login_user(user)
         flash(f"Welcome, {user.display_name}!", "success")
         return redirect(url_for("index"))
 
     return render_template("register.html")
+
+
+@app.route("/invites", methods=["GET", "POST"])
+@login_required
+def invites():
+    if request.method == "POST":
+        code = InviteCode(
+            code=secrets.token_urlsafe(8),
+            created_by_id=current_user.id,
+        )
+        db.session.add(code)
+        db.session.commit()
+        flash(f"Invite code created: {code.code}", "success")
+    codes = InviteCode.query.filter_by(created_by_id=current_user.id).order_by(InviteCode.created_at.desc()).all()
+    return render_template("invites.html", codes=codes)
 
 
 @app.route("/login", methods=["GET", "POST"])

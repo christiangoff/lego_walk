@@ -22,6 +22,14 @@ MIGRATIONS = [
     ("Add user_id to weight_log", "ALTER TABLE weight_log ADD COLUMN user_id INTEGER REFERENCES user(id)"),
     ("Add user_id to lego_set", "ALTER TABLE lego_set ADD COLUMN user_id INTEGER REFERENCES user(id)"),
     ("Add user_id to session", "ALTER TABLE session ADD COLUMN user_id INTEGER REFERENCES user(id)"),
+    ("Add invite_code table", """CREATE TABLE IF NOT EXISTS invite_code (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code VARCHAR(32) NOT NULL UNIQUE,
+    created_by_id INTEGER NOT NULL REFERENCES user(id),
+    used_by_id INTEGER REFERENCES user(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    used_at DATETIME
+)"""),
 ]
 
 

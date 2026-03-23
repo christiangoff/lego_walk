@@ -6,6 +6,23 @@ from datetime import datetime, date
 db = SQLAlchemy()
 
 
+class InviteCode(db.Model):
+    __tablename__ = "invite_code"
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(32), nullable=False, unique=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    used_by_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    used_at = db.Column(db.DateTime, nullable=True)
+
+    @property
+    def is_used(self):
+        return self.used_by_id is not None
+
+    def __repr__(self):
+        return f"<InviteCode {self.code} used={self.is_used}>"
+
+
 class User(UserMixin, db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
