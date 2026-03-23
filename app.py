@@ -176,6 +176,7 @@ def dashboard():
     week_start = today - timedelta(days=today.weekday())
     week_sessions = [s for s in sessions if s.date >= week_start]
     week_miles = round(sum(s.distance_miles or 0 for s in week_sessions), 2)
+    week_minutes = int(sum(s.duration_minutes or 0 for s in week_sessions))
 
     return render_template(
         "index.html",
@@ -189,6 +190,7 @@ def dashboard():
         sets_completed=sets_completed,
         week_miles=week_miles,
         week_sessions=len(week_sessions),
+        week_minutes=week_minutes,
     )
 
 
