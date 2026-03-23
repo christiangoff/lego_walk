@@ -365,9 +365,7 @@ def delete_session(session_id):
 @login_required
 def sets():
     all_sets = LegoSet.query.filter_by(user_id=current_user.id).order_by(LegoSet.completed, LegoSet.name).all()
-    in_progress = [s for s in all_sets if not s.completed]
-    completed_sets = [s for s in all_sets if s.completed]
-    return render_template("sets.html", in_progress=in_progress, completed_sets=completed_sets)
+    return render_template("sets.html", sets=all_sets)
 
 
 @app.route("/sets/<int:set_id>")
