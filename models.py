@@ -1,7 +1,28 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
 
 db = SQLAlchemy()
+
+
+class User(UserMixin, db.Model):
+    __tablename__ = "user"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), nullable=False, unique=True)
+    display_name = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f"<User {self.email}>"
 
 
 class Profile(db.Model):
@@ -12,6 +33,7 @@ class Profile(db.Model):
     age = db.Column(db.Integer, nullable=True)
     # current weight kept here for quick access; history in WeightLog
     current_weight_lbs = db.Column(db.Float, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     def __repr__(self):
         return f"<Profile {self.name}>"
@@ -57,6 +79,7 @@ class WeightLog(db.Model):
     weight_lbs = db.Column(db.Float, nullable=False)
     notes = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     def __repr__(self):
         return f"<WeightLog {self.date}: {self.weight_lbs} lbs>"
@@ -65,7 +88,7 @@ class WeightLog(db.Model):
 class LegoSet(db.Model):
     __tablename__ = "lego_set"
     id = db.Column(db.Integer, primary_key=True)
-    set_number = db.Column(db.String(50), nullable=False, unique=True)
+    set_number = db.Column(db.String(50), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     piece_count = db.Column(db.Integer, nullable=True)
     total_bag_count = db.Column(db.Integer, nullable=True)
@@ -74,6 +97,7 @@ class LegoSet(db.Model):
     completed = db.Column(db.Boolean, default=False)
     completion_date = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     sessions = db.relationship("Session", backref="lego_set", lazy=True)
 
@@ -125,6 +149,7 @@ class Session(db.Model):
     # comma-separated bag numbers, e.g. "1,2,3"
     bag_details = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     def __repr__(self):
         return f"<Session {self.date}: {self.distance_miles} mi>"

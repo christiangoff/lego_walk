@@ -52,6 +52,7 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarMain">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-1">
+        {% if current_user.is_authenticated %}
         <li class="nav-item">
           <a
             class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
@@ -92,6 +93,17 @@
             <i class="bi bi-bar-chart-fill"></i> Data
           </a>
         </li>
+        <li class="nav-item d-flex align-items-center ms-2">
+          <span class="text-muted small me-2">
+            <i class="bi bi-person-circle"></i> {{ current_user.display_name }}
+          </span>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Sign Out
+          </a>
+        </li>
+        {% endif %}
       </ul>
     </div>
   </div>

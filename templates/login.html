@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Sign In — StudStep{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-12 col-sm-8 col-md-5 col-lg-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <img src="{{ url_for('static', filename='icons/studstep_logo_noBackground.png') }}" alt="StudStep" height="48" class="mb-2">
+          <h4 class="fw-bold mb-0"><span class="brand-lego">STUD</span><span class="brand-walk">STEP</span></h4>
+          <p class="text-muted small">Sign in to your account</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show py-2" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+          <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              required
+              autofocus
+            />
+          </div>
+          <div class="mb-4">
+            <label for="password" class="form-label">Password</label>
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Sign In</button>
+          </div>
+        </form>
+
+        <hr class="my-3" />
+        <p class="text-center text-muted small mb-0">
+          Don't have an account?
+          <a href="{{ url_for('register') }}" class="text-decoration-none">Create one</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

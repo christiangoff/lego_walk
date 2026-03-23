@@ -4,7 +4,8 @@ import urllib.request
 import urllib.parse
 from datetime import date, datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from models import db, Profile, WeightLog, LegoSet, Session
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from models import db, User, Profile, WeightLog, LegoSet, Session
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "lego-workout-secret-key-2024")
@@ -15,8 +16,17 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
+login_manager.login_message_category = "warning"
+
 # Make enumerate available in Jinja2 templates
 app.jinja_env.globals['enumerate'] = enumerate
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 def calculate_calories(duration_minutes, weight_kg, speed_mph=3.0):
@@ -41,24 +51,83 @@ def calculate_calories(duration_minutes, weight_kg, speed_mph=3.0):
     return round(calories, 1)
 
 
-def get_or_create_profile():
-    profile = Profile.query.first()
+def get_or_create_profile(user_id):
+    profile = Profile.query.filter_by(user_id=user_id).first()
     if not profile:
-        profile = Profile(name="Athlete")
+        profile = Profile(name="Athlete", user_id=user_id)
         db.session.add(profile)
         db.session.commit()
     return profile
 
 
 # --------------------------------------------------------------------------- #
+#  Auth routes
+# --------------------------------------------------------------------------- #
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        display_name = request.form.get("display_name", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not email or not display_name or not password or not confirm_password:
+            flash("All fields are required.", "danger")
+            return render_template("register.html")
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return render_template("register.html")
+
+        if User.query.filter_by(email=email).first():
+            flash("An account with that email already exists.", "danger")
+            return render_template("register.html")
+
+        user = User(email=email, display_name=display_name)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        login_user(user)
+        flash(f"Welcome, {user.display_name}!", "success")
+        return redirect(url_for("index"))
+
+    return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for("index"))
+        flash("Invalid email or password.", "danger")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
+
+
+# --------------------------------------------------------------------------- #
 #  Dashboard
 # --------------------------------------------------------------------------- #
 @app.route("/")
+@login_required
 def index():
-    profile = get_or_create_profile()
-    sessions = Session.query.order_by(Session.date.desc()).all()
-    sets_in_progress = LegoSet.query.filter_by(completed=False).count()
-    sets_completed = LegoSet.query.filter_by(completed=True).count()
+    profile = get_or_create_profile(current_user.id)
+    sessions = Session.query.filter_by(user_id=current_user.id).order_by(Session.date.desc()).all()
+    sets_in_progress = LegoSet.query.filter_by(user_id=current_user.id, completed=False).count()
+    sets_completed = LegoSet.query.filter_by(user_id=current_user.id, completed=True).count()
 
     total_miles = round(sum(s.distance_miles or 0 for s in sessions), 2)
     total_calories = round(sum(s.calories_burned or 0 for s in sessions), 0)
@@ -92,15 +161,17 @@ def index():
 #  Sessions
 # --------------------------------------------------------------------------- #
 @app.route("/sessions")
+@login_required
 def sessions():
-    all_sessions = Session.query.order_by(Session.date.desc()).all()
-    lego_sets = LegoSet.query.order_by(LegoSet.name).all()
+    all_sessions = Session.query.filter_by(user_id=current_user.id).order_by(Session.date.desc()).all()
+    lego_sets = LegoSet.query.filter_by(user_id=current_user.id).order_by(LegoSet.name).all()
     return render_template("sessions.html", sessions=all_sessions, lego_sets=lego_sets)
 
 
 @app.route("/sessions/add", methods=["POST"])
+@login_required
 def add_session():
-    profile = get_or_create_profile()
+    profile = get_or_create_profile(current_user.id)
     try:
         session_date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
         duration = float(request.form["duration_minutes"])
@@ -133,7 +204,7 @@ def add_session():
         if existing_set and existing_set != "new":
             lego_set_id = int(existing_set)
         elif existing_set == "new" and new_set_number:
-            lego_set = LegoSet.query.filter_by(set_number=new_set_number).first()
+            lego_set = LegoSet.query.filter_by(set_number=new_set_number, user_id=current_user.id).first()
             if not lego_set:
                 piece_count = request.form.get("new_piece_count", "").strip()
                 total_bag_count = request.form.get("new_total_bag_count", "").strip()
@@ -144,6 +215,7 @@ def add_session():
                     total_bag_count=int(total_bag_count) if total_bag_count else None,
                     theme=request.form.get("new_theme", "").strip() or None,
                     image_url=request.form.get("image_url", "").strip() or None,
+                    user_id=current_user.id,
                 )
                 db.session.add(lego_set)
                 db.session.flush()
@@ -163,6 +235,7 @@ def add_session():
             lego_set_id=lego_set_id,
             bags_completed=bags_completed,
             bag_details=bag_details,
+            user_id=current_user.id,
         )
         db.session.add(new_session)
         db.session.commit()
@@ -177,10 +250,11 @@ def add_session():
 
 
 @app.route("/sessions/edit/<int:session_id>", methods=["GET", "POST"])
+@login_required
 def edit_session(session_id):
-    s = Session.query.get_or_404(session_id)
-    profile = get_or_create_profile()
-    lego_sets = LegoSet.query.order_by(LegoSet.name).all()
+    s = Session.query.filter_by(id=session_id, user_id=current_user.id).first_or_404()
+    profile = get_or_create_profile(current_user.id)
+    lego_sets = LegoSet.query.filter_by(user_id=current_user.id).order_by(LegoSet.name).all()
 
     if request.method == "POST":
         try:
@@ -213,7 +287,7 @@ def edit_session(session_id):
             if existing_set and existing_set not in ("", "none", "new"):
                 s.lego_set_id = int(existing_set)
             elif existing_set == "new" and new_set_number:
-                lego_set = LegoSet.query.filter_by(set_number=new_set_number).first()
+                lego_set = LegoSet.query.filter_by(set_number=new_set_number, user_id=current_user.id).first()
                 if not lego_set:
                     piece_count = request.form.get("new_piece_count", "").strip()
                     total_bag_count = request.form.get("new_total_bag_count", "").strip()
@@ -224,6 +298,7 @@ def edit_session(session_id):
                         total_bag_count=int(total_bag_count) if total_bag_count else None,
                         theme=request.form.get("new_theme", "").strip() or None,
                         image_url=request.form.get("image_url", "").strip() or None,
+                        user_id=current_user.id,
                     )
                     db.session.add(lego_set)
                     db.session.flush()
@@ -246,8 +321,9 @@ def edit_session(session_id):
 
 
 @app.route("/sessions/delete/<int:session_id>", methods=["POST"])
+@login_required
 def delete_session(session_id):
-    s = Session.query.get_or_404(session_id)
+    s = Session.query.filter_by(id=session_id, user_id=current_user.id).first_or_404()
     db.session.delete(s)
     db.session.commit()
     flash("Session deleted.", "warning")
@@ -258,15 +334,19 @@ def delete_session(session_id):
 #  Lego Sets
 # --------------------------------------------------------------------------- #
 @app.route("/sets")
+@login_required
 def sets():
-    all_sets = LegoSet.query.order_by(LegoSet.completed, LegoSet.name).all()
-    return render_template("sets.html", sets=all_sets)
+    all_sets = LegoSet.query.filter_by(user_id=current_user.id).order_by(LegoSet.completed, LegoSet.name).all()
+    in_progress = [s for s in all_sets if not s.completed]
+    completed_sets = [s for s in all_sets if s.completed]
+    return render_template("sets.html", in_progress=in_progress, completed_sets=completed_sets)
 
 
 @app.route("/sets/<int:set_id>")
+@login_required
 def set_detail(set_id):
-    lego_set = LegoSet.query.get_or_404(set_id)
-    sessions = Session.query.filter_by(lego_set_id=set_id).order_by(Session.date).all()
+    lego_set = LegoSet.query.filter_by(id=set_id, user_id=current_user.id).first_or_404()
+    sessions = Session.query.filter_by(lego_set_id=set_id, user_id=current_user.id).order_by(Session.date).all()
 
     total_miles = round(sum(s.distance_miles or 0 for s in sessions), 2)
     total_minutes = sum(s.duration_minutes or 0 for s in sessions)
@@ -296,6 +376,7 @@ def set_detail(set_id):
 
 
 @app.route("/sets/add", methods=["POST"])
+@login_required
 def add_set():
     try:
         set_number = request.form["set_number"].strip()
@@ -303,7 +384,7 @@ def add_set():
             flash("Set number is required.", "danger")
             return redirect(url_for("sets"))
 
-        existing = LegoSet.query.filter_by(set_number=set_number).first()
+        existing = LegoSet.query.filter_by(set_number=set_number, user_id=current_user.id).first()
         if existing:
             flash(f"Set {set_number} already exists.", "warning")
             return redirect(url_for("sets"))
@@ -317,6 +398,7 @@ def add_set():
             total_bag_count=int(total_bag_count) if total_bag_count else None,
             theme=request.form.get("theme", "").strip() or None,
             image_url=request.form.get("image_url", "").strip() or None,
+            user_id=current_user.id,
         )
         db.session.add(new_set)
         db.session.commit()
@@ -328,8 +410,9 @@ def add_set():
 
 
 @app.route("/sets/edit/<int:set_id>", methods=["GET", "POST"])
+@login_required
 def edit_set(set_id):
-    lego_set = LegoSet.query.get_or_404(set_id)
+    lego_set = LegoSet.query.filter_by(id=set_id, user_id=current_user.id).first_or_404()
     if request.method == "POST":
         try:
             lego_set.set_number = request.form["set_number"].strip()
@@ -350,8 +433,9 @@ def edit_set(set_id):
 
 
 @app.route("/sets/complete/<int:set_id>", methods=["POST"])
+@login_required
 def complete_set(set_id):
-    lego_set = LegoSet.query.get_or_404(set_id)
+    lego_set = LegoSet.query.filter_by(id=set_id, user_id=current_user.id).first_or_404()
     lego_set.completed = True
     lego_set.completion_date = date.today()
     db.session.commit()
@@ -360,8 +444,9 @@ def complete_set(set_id):
 
 
 @app.route("/sets/reopen/<int:set_id>", methods=["POST"])
+@login_required
 def reopen_set(set_id):
-    lego_set = LegoSet.query.get_or_404(set_id)
+    lego_set = LegoSet.query.filter_by(id=set_id, user_id=current_user.id).first_or_404()
     lego_set.completed = False
     lego_set.completion_date = None
     db.session.commit()
@@ -370,8 +455,9 @@ def reopen_set(set_id):
 
 
 @app.route("/sets/delete/<int:set_id>", methods=["POST"])
+@login_required
 def delete_set(set_id):
-    lego_set = LegoSet.query.get_or_404(set_id)
+    lego_set = LegoSet.query.filter_by(id=set_id, user_id=current_user.id).first_or_404()
     # Unlink sessions
     for s in lego_set.sessions:
         s.lego_set_id = None
@@ -385,8 +471,9 @@ def delete_set(set_id):
 #  Profile
 # --------------------------------------------------------------------------- #
 @app.route("/profile", methods=["GET", "POST"])
+@login_required
 def profile():
-    p = get_or_create_profile()
+    p = get_or_create_profile(current_user.id)
     if request.method == "POST":
         action = request.form.get("action")
         if action == "update_profile":
@@ -414,10 +501,11 @@ def profile():
                     date=weight_date,
                     weight_lbs=weight,
                     notes=request.form.get("weight_notes", "").strip() or None,
+                    user_id=current_user.id,
                 )
                 db.session.add(log)
                 db.session.flush()
-                latest = WeightLog.query.order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).first()
+                latest = WeightLog.query.filter_by(user_id=current_user.id).order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).first()
                 p.current_weight_lbs = latest.weight_lbs if latest else weight
                 db.session.commit()
                 flash(f"Weight entry ({weight} lbs) added!", "success")
@@ -427,10 +515,10 @@ def profile():
         elif action == "delete_weight":
             try:
                 log_id = int(request.form["log_id"])
-                log = WeightLog.query.get_or_404(log_id)
+                log = WeightLog.query.filter_by(id=log_id, user_id=current_user.id).first_or_404()
                 db.session.delete(log)
                 # Update current weight to latest remaining entry
-                latest = WeightLog.query.order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).first()
+                latest = WeightLog.query.filter_by(user_id=current_user.id).order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).first()
                 p.current_weight_lbs = latest.weight_lbs if latest else None
                 db.session.commit()
                 flash("Weight entry deleted.", "warning")
@@ -439,7 +527,7 @@ def profile():
                 flash(f"Error deleting weight: {e}", "danger")
         return redirect(url_for("profile"))
 
-    weight_logs = WeightLog.query.order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).all()
+    weight_logs = WeightLog.query.filter_by(user_id=current_user.id).order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).all()
     return render_template("profile.html", profile=p, weight_logs=weight_logs)
 
 
@@ -447,10 +535,11 @@ def profile():
 #  Data & Visualizations
 # --------------------------------------------------------------------------- #
 @app.route("/data")
+@login_required
 def data():
-    sessions = Session.query.order_by(Session.date).all()
-    weight_logs = WeightLog.query.order_by(WeightLog.date).all()
-    sets_list = LegoSet.query.order_by(LegoSet.completion_date).all()
+    sessions = Session.query.filter_by(user_id=current_user.id).order_by(Session.date).all()
+    weight_logs = WeightLog.query.filter_by(user_id=current_user.id).order_by(WeightLog.date).all()
+    sets_list = LegoSet.query.filter_by(user_id=current_user.id).order_by(LegoSet.completion_date).all()
 
     # Fun stats
     total_miles = round(sum(s.distance_miles or 0 for s in sessions), 2)
@@ -514,7 +603,7 @@ def data():
         longest=int(longest),
         fastest=fastest,
         total_sessions=total_sessions,
-        sets_completed=LegoSet.query.filter_by(completed=True).count(),
+        sets_completed=LegoSet.query.filter_by(user_id=current_user.id, completed=True).count(),
         dist_labels=json.dumps(dist_labels),
         dist_data=json.dumps(dist_data),
         cal_labels=json.dumps(cal_labels),
@@ -534,6 +623,7 @@ def data():
 #  API endpoint for calorie preview
 # --------------------------------------------------------------------------- #
 @app.route("/api/lookup_set")
+@login_required
 def api_lookup_set():
     set_number = request.args.get("set_number", "").strip()
     if not set_number:
@@ -585,12 +675,13 @@ def api_lookup_set():
 
 
 @app.route("/api/calc_calories")
+@login_required
 def api_calc_calories():
     try:
         duration = float(request.args.get("duration", 0))
         speed = float(request.args.get("speed", 3.0))
-        profile = get_or_create_profile()
-        weight_kg = profile.weight_kg or 70
+        p = get_or_create_profile(current_user.id)
+        weight_kg = p.weight_kg or 70
         calories = calculate_calories(duration, weight_kg, speed)
         distance = round(speed * (duration / 60), 2) if speed and duration else None
         return jsonify({"calories": calories, "distance": distance})
@@ -604,6 +695,4 @@ def api_calc_calories():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-        # Ensure a default profile exists
-        get_or_create_profile()
     app.run(host="0.0.0.0", port=5001, debug=True)
