@@ -22,6 +22,7 @@ MIGRATIONS = [
     ("Add user_id to weight_log", "ALTER TABLE weight_log ADD COLUMN user_id INTEGER REFERENCES user(id)"),
     ("Add user_id to lego_set", "ALTER TABLE lego_set ADD COLUMN user_id INTEGER REFERENCES user(id)"),
     ("Add user_id to session", "ALTER TABLE session ADD COLUMN user_id INTEGER REFERENCES user(id)"),
+    ("Add is_admin to user", "ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0"),
     ("Add invite_code table", """CREATE TABLE IF NOT EXISTS invite_code (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code VARCHAR(32) NOT NULL UNIQUE,
@@ -72,6 +73,14 @@ def run_migrations():
                 conn.execute(text(f"UPDATE {table} SET user_id = :uid WHERE user_id IS NULL"), {"uid": uid})
             conn.commit()
             print(f"  [OK] Existing data assigned to user id={uid}")
+
+        # Ensure the designated admin account has is_admin=1
+        with db.engine.connect() as conn:
+            conn.execute(text(
+                "UPDATE user SET is_admin = 1 WHERE email = 'christian.goff@gmail.com'"
+            ))
+            conn.commit()
+            print("  [OK] Admin flag set for christian.goff@gmail.com")
 
         print("Migration complete.")
 

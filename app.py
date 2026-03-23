@@ -109,6 +109,9 @@ def register():
 @app.route("/invites", methods=["GET", "POST"])
 @login_required
 def invites():
+    if not current_user.is_admin:
+        flash("You don't have permission to access that page.", "danger")
+        return redirect(url_for("index"))
     if request.method == "POST":
         code = InviteCode(
             code=secrets.token_urlsafe(8),
