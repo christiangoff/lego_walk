@@ -23,6 +23,14 @@ MIGRATIONS = [
     ("Add user_id to lego_set", "ALTER TABLE lego_set ADD COLUMN user_id INTEGER REFERENCES user(id)"),
     ("Add user_id to session", "ALTER TABLE session ADD COLUMN user_id INTEGER REFERENCES user(id)"),
     ("Add is_admin to user", "ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0"),
+    ("Add password_reset_token table", """CREATE TABLE IF NOT EXISTS password_reset_token (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL REFERENCES user(id),
+    expires_at DATETIME NOT NULL,
+    used BOOLEAN DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)"""),
     ("Add invite_code table", """CREATE TABLE IF NOT EXISTS invite_code (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code VARCHAR(32) NOT NULL UNIQUE,
