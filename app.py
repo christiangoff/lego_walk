@@ -136,10 +136,12 @@ def add_session():
             lego_set = LegoSet.query.filter_by(set_number=new_set_number).first()
             if not lego_set:
                 piece_count = request.form.get("new_piece_count", "").strip()
+                total_bag_count = request.form.get("new_total_bag_count", "").strip()
                 lego_set = LegoSet(
                     set_number=new_set_number,
                     name=new_set_name or f"Set {new_set_number}",
                     piece_count=int(piece_count) if piece_count else None,
+                    total_bag_count=int(total_bag_count) if total_bag_count else None,
                     theme=request.form.get("new_theme", "").strip() or None,
                     image_url=request.form.get("image_url", "").strip() or None,
                 )
@@ -214,10 +216,12 @@ def edit_session(session_id):
                 lego_set = LegoSet.query.filter_by(set_number=new_set_number).first()
                 if not lego_set:
                     piece_count = request.form.get("new_piece_count", "").strip()
+                    total_bag_count = request.form.get("new_total_bag_count", "").strip()
                     lego_set = LegoSet(
                         set_number=new_set_number,
                         name=new_set_name or f"Set {new_set_number}",
                         piece_count=int(piece_count) if piece_count else None,
+                        total_bag_count=int(total_bag_count) if total_bag_count else None,
                         theme=request.form.get("new_theme", "").strip() or None,
                         image_url=request.form.get("image_url", "").strip() or None,
                     )
@@ -305,10 +309,12 @@ def add_set():
             return redirect(url_for("sets"))
 
         piece_count = request.form.get("piece_count", "").strip()
+        total_bag_count = request.form.get("total_bag_count", "").strip()
         new_set = LegoSet(
             set_number=set_number,
             name=request.form.get("name", "").strip() or f"Set {set_number}",
             piece_count=int(piece_count) if piece_count else None,
+            total_bag_count=int(total_bag_count) if total_bag_count else None,
             theme=request.form.get("theme", "").strip() or None,
             image_url=request.form.get("image_url", "").strip() or None,
         )
@@ -330,6 +336,8 @@ def edit_set(set_id):
             lego_set.name = request.form["name"].strip()
             piece_count = request.form.get("piece_count", "").strip()
             lego_set.piece_count = int(piece_count) if piece_count else None
+            total_bag_count = request.form.get("total_bag_count", "").strip()
+            lego_set.total_bag_count = int(total_bag_count) if total_bag_count else None
             lego_set.theme = request.form.get("theme", "").strip() or None
             lego_set.image_url = request.form.get("image_url", "").strip() or None
             db.session.commit()
@@ -450,12 +458,13 @@ def data():
         for s in sessions
         if s.lego_set and s.lego_set.piece_count
     )
-    # De-dupe pieces by set (count each set's pieces once)
+    # Pieces built: full count for completed sets, bag-proportional for in-progress
     seen_sets = set()
     unique_pieces = 0
     for s in sessions:
         if s.lego_set and s.lego_set_id not in seen_sets:
-            unique_pieces += s.lego_set.piece_count or 0
+            pb = s.lego_set.pieces_built
+            unique_pieces += pb if pb is not None else 0
             seen_sets.add(s.lego_set_id)
 
     longest = max((s.duration_minutes for s in sessions), default=0)

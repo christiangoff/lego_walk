@@ -37,11 +37,13 @@
                  value="{{ lego_set.piece_count or '' }}" min="1" />
         </div>
         <div class="col-sm-4">
-          <label class="form-label fw-semibold">Theme</label>
-          <input type="text" class="form-control" name="theme" value="{{ lego_set.theme or '' }}" />
+          <label class="form-label fw-semibold">Total Bags</label>
+          <input type="number" class="form-control" name="total_bag_count"
+                 value="{{ lego_set.total_bag_count or '' }}" min="1" placeholder="e.g. 6" />
         </div>
         <div class="col-sm-4">
-          <!-- placeholder for layout -->
+          <label class="form-label fw-semibold">Theme</label>
+          <input type="text" class="form-control" name="theme" value="{{ lego_set.theme or '' }}" />
         </div>
         <div class="col-12">
           <label class="form-label fw-semibold">Image URL</label>

@@ -70,6 +70,12 @@
             <div class="fw-bold text-muted">{{ ls.total_duration | int }}</div>
             <div class="text-muted">Mins</div>
           </div>
+          {% if ls.total_calories %}
+          <div>
+            <div class="fw-bold text-danger">{{ ls.total_calories }}</div>
+            <div class="text-muted">Cal</div>
+          </div>
+          {% endif %}
         </div>
       </div>
 
@@ -144,6 +150,12 @@
             <div class="fw-bold text-warning">{{ ls.total_distance }}</div>
             <div class="text-muted">Miles</div>
           </div>
+          {% if ls.total_calories %}
+          <div>
+            <div class="fw-bold text-danger">{{ ls.total_calories }}</div>
+            <div class="text-muted">Cal</div>
+          </div>
+          {% endif %}
         </div>
       </div>
 
@@ -203,15 +215,19 @@
               <label class="form-label fw-semibold">Set Name <span class="text-danger">*</span></label>
               <input type="text" class="form-control" id="sets_name" name="name" placeholder="e.g. Back to the Future" required />
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-3">
               <label class="form-label fw-semibold">Piece Count</label>
               <input type="number" class="form-control" id="sets_piece_count" name="piece_count" placeholder="1872" min="1" />
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-3">
+              <label class="form-label fw-semibold">Total Bags</label>
+              <input type="number" class="form-control" name="total_bag_count" placeholder="e.g. 6" min="1" />
+            </div>
+            <div class="col-sm-3">
               <label class="form-label fw-semibold">Theme</label>
               <input type="text" class="form-control" id="sets_theme" name="theme" placeholder="Icons, Technic…" />
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-3">
               <label class="form-label fw-semibold">Image URL</label>
               <input type="url" class="form-control" id="sets_image_url" name="image_url" placeholder="auto-filled by lookup" />
             </div>

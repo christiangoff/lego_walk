@@ -68,6 +68,7 @@ class LegoSet(db.Model):
     set_number = db.Column(db.String(50), nullable=False, unique=True)
     name = db.Column(db.String(200), nullable=False)
     piece_count = db.Column(db.Integer, nullable=True)
+    total_bag_count = db.Column(db.Integer, nullable=True)
     theme = db.Column(db.String(100), nullable=True)
     image_url = db.Column(db.String(500), nullable=True)
     completed = db.Column(db.Boolean, default=False)
@@ -90,6 +91,24 @@ class LegoSet(db.Model):
     @property
     def total_duration(self):
         return sum(s.duration_minutes or 0 for s in self.sessions)
+
+    @property
+    def total_calories(self):
+        return int(sum(s.calories_burned or 0 for s in self.sessions))
+
+    @property
+    def pieces_built(self):
+        """Pieces built: full count if completed, else proportional based on bags finished."""
+        if not self.piece_count:
+            return None
+        if self.completed:
+            return self.piece_count
+        if not self.total_bag_count:
+            return None
+        bags_done = sum(s.bags_completed or 0 for s in self.sessions)
+        if not bags_done:
+            return None
+        return round((bags_done / self.total_bag_count) * self.piece_count)
 
 
 class Session(db.Model):
