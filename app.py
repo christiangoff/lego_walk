@@ -551,6 +551,20 @@ def profile():
             except Exception as e:
                 db.session.rollback()
                 flash(f"Error deleting weight: {e}", "danger")
+        elif action == "change_password":
+            current_pw = request.form.get("current_password", "")
+            new_pw = request.form.get("new_password", "")
+            confirm_pw = request.form.get("confirm_new_password", "")
+            if not current_user.check_password(current_pw):
+                flash("Current password is incorrect.", "danger")
+            elif not new_pw:
+                flash("New password cannot be blank.", "danger")
+            elif new_pw != confirm_pw:
+                flash("New passwords do not match.", "danger")
+            else:
+                current_user.set_password(new_pw)
+                db.session.commit()
+                flash("Password updated successfully.", "success")
         return redirect(url_for("profile"))
 
     weight_logs = WeightLog.query.filter_by(user_id=current_user.id).order_by(WeightLog.date.desc(), WeightLog.created_at.desc()).all()
