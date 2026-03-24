@@ -460,6 +460,7 @@ def sets():
 def set_detail(set_id):
     lego_set = LegoSet.query.filter_by(id=set_id, user_id=current_user.id).first_or_404()
     sessions = Session.query.filter_by(lego_set_id=set_id, user_id=current_user.id).order_by(Session.date.desc(), Session.created_at.desc()).all()
+    sessions_asc = list(reversed(sessions))
 
     total_miles = round(sum(s.distance_miles or 0 for s in sessions), 2)
     total_minutes = sum(s.duration_minutes or 0 for s in sessions)
@@ -467,11 +468,11 @@ def set_detail(set_id):
     avg_speed = round(sum(s.avg_speed_mph for s in sessions if s.avg_speed_mph) / len([s for s in sessions if s.avg_speed_mph]), 2) if any(s.avg_speed_mph for s in sessions) else None
     total_bags = sum(s.bags_completed or 0 for s in sessions)
 
-    # Chart data: distance per session
-    chart_labels = [s.date.strftime("%b %d") for s in sessions]
-    chart_distance = [s.distance_miles or 0 for s in sessions]
-    chart_calories = [s.calories_burned or 0 for s in sessions]
-    chart_speed = [s.avg_speed_mph or 0 for s in sessions]
+    # Chart data: distance per session (oldest to newest left to right)
+    chart_labels = [s.date.strftime("%b %d") for s in sessions_asc]
+    chart_distance = [s.distance_miles or 0 for s in sessions_asc]
+    chart_calories = [s.calories_burned or 0 for s in sessions_asc]
+    chart_speed = [s.avg_speed_mph or 0 for s in sessions_asc]
 
     return render_template("set_detail.html",
         lego_set=lego_set,
