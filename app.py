@@ -459,7 +459,7 @@ def sets():
 @login_required
 def set_detail(set_id):
     lego_set = LegoSet.query.filter_by(id=set_id, user_id=current_user.id).first_or_404()
-    sessions = Session.query.filter_by(lego_set_id=set_id, user_id=current_user.id).order_by(Session.date).all()
+    sessions = Session.query.filter_by(lego_set_id=set_id, user_id=current_user.id).order_by(Session.date.desc(), Session.created_at.desc()).all()
 
     total_miles = round(sum(s.distance_miles or 0 for s in sessions), 2)
     total_minutes = sum(s.duration_minutes or 0 for s in sessions)
