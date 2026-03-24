@@ -101,7 +101,7 @@
                 <span class="badge bg-danger">Inactive</span>
                 {% endif %}
               </td>
-              <td class="text-muted small">{{ u.created_at.strftime("%b %d, %Y") }}</td>
+              <td class="text-muted small">{{ u.created_at.strftime("%b %d, %Y") if u.created_at else "—" }}</td>
               <td class="text-end">
                 <div class="d-flex gap-1 justify-content-end">
                   {% if u.id != current_user.id %}
