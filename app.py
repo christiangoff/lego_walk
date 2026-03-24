@@ -63,6 +63,28 @@ def get_or_create_profile(user_id):
     return profile
 
 
+def aggregate_sessions_by_day(sessions):
+    """Combine same-day sessions into one data point. sessions must be in ascending date order."""
+    from collections import OrderedDict
+    days = OrderedDict()
+    for s in sessions:
+        key = s.date
+        if key not in days:
+            days[key] = {"distance": 0.0, "calories": 0.0, "speed_sum": 0.0, "speed_count": 0}
+        days[key]["distance"] = round(days[key]["distance"] + (s.distance_miles or 0), 2)
+        days[key]["calories"] = round(days[key]["calories"] + (s.calories_burned or 0), 1)
+        if s.avg_speed_mph:
+            days[key]["speed_sum"] += s.avg_speed_mph
+            days[key]["speed_count"] += 1
+    labels, distances, calories, speeds = [], [], [], []
+    for d, v in days.items():
+        labels.append(d.strftime("%b %d"))
+        distances.append(v["distance"])
+        calories.append(v["calories"])
+        speeds.append(round(v["speed_sum"] / v["speed_count"], 2) if v["speed_count"] else 0)
+    return labels, distances, calories, speeds
+
+
 # --------------------------------------------------------------------------- #
 #  Auth routes
 # --------------------------------------------------------------------------- #
@@ -469,11 +491,8 @@ def set_detail(set_id):
     total_bags = sum(s.bags_completed or 0 for s in sessions)
     pct_complete = round((total_bags / lego_set.total_bag_count) * 100) if lego_set.total_bag_count and total_bags else 0
 
-    # Chart data: distance per session (oldest to newest left to right)
-    chart_labels = [s.date.strftime("%b %d") for s in sessions_asc]
-    chart_distance = [s.distance_miles or 0 for s in sessions_asc]
-    chart_calories = [s.calories_burned or 0 for s in sessions_asc]
-    chart_speed = [s.avg_speed_mph or 0 for s in sessions_asc]
+    # Chart data: aggregated by day, oldest to newest
+    chart_labels, chart_distance, chart_calories, chart_speed = aggregate_sessions_by_day(sessions_asc)
 
     return render_template("set_detail.html",
         lego_set=lego_set,
@@ -692,17 +711,11 @@ def data():
     fastest = max((s.avg_speed_mph or 0 for s in sessions), default=0)
     total_sessions = len(sessions)
 
-    # Chart data: distance over time
-    dist_labels = [s.date.strftime("%b %d") for s in sessions if s.distance_miles]
-    dist_data = [s.distance_miles for s in sessions if s.distance_miles]
-
-    # Chart data: calories over time
-    cal_labels = [s.date.strftime("%b %d") for s in sessions if s.calories_burned]
-    cal_data = [round(s.calories_burned, 1) for s in sessions if s.calories_burned]
-
-    # Chart data: speed over time
-    speed_labels = [s.date.strftime("%b %d") for s in sessions if s.avg_speed_mph]
-    speed_data = [s.avg_speed_mph for s in sessions if s.avg_speed_mph]
+    # Chart data: aggregated by day
+    dist_labels, dist_data, cal_data_raw, speed_data_raw = aggregate_sessions_by_day(sessions)
+    cal_labels, speed_labels = dist_labels, dist_labels
+    cal_data = cal_data_raw
+    speed_data = speed_data_raw
 
     # Chart data: monthly miles bar chart
     monthly = {}
