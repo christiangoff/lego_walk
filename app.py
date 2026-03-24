@@ -467,6 +467,7 @@ def set_detail(set_id):
     total_calories = round(sum(s.calories_burned or 0 for s in sessions))
     avg_speed = round(sum(s.avg_speed_mph for s in sessions if s.avg_speed_mph) / len([s for s in sessions if s.avg_speed_mph]), 2) if any(s.avg_speed_mph for s in sessions) else None
     total_bags = sum(s.bags_completed or 0 for s in sessions)
+    pct_complete = round((total_bags / lego_set.total_bag_count) * 100) if lego_set.total_bag_count and total_bags else 0
 
     # Chart data: distance per session (oldest to newest left to right)
     chart_labels = [s.date.strftime("%b %d") for s in sessions_asc]
@@ -486,6 +487,7 @@ def set_detail(set_id):
         chart_distance=chart_distance,
         chart_calories=chart_calories,
         chart_speed=chart_speed,
+        pct_complete=pct_complete,
     )
 
 

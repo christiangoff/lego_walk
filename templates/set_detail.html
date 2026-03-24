@@ -98,14 +98,20 @@
         </div>
       </div>
       {% endif %}
-      {% if lego_set.piece_count and total_bags %}
-      <div class="col-6 col-lg-3">
-        <div class="card bg-dark border-secondary text-center py-2">
-          <div class="fw-bold text-light fs-5">
-            {% set pct = ((total_bags / (lego_set.piece_count / (lego_set.piece_count / total_bags | float))) * 100) if total_bags else 0 %}
-            —
+      {% if not lego_set.completed and lego_set.total_bag_count and total_bags %}
+      <div class="col-12 col-lg-6">
+        <div class="card bg-dark border-secondary py-2 px-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted small">Progress</span>
+            <span class="fw-bold text-warning">{{ pct_complete }}%</span>
           </div>
-          <div class="text-muted small">Progress</div>
+          <div class="progress" style="height: 10px;">
+            <div class="progress-bar bg-warning" role="progressbar"
+                 style="width: {{ pct_complete }}%"
+                 aria-valuenow="{{ pct_complete }}" aria-valuemin="0" aria-valuemax="100">
+            </div>
+          </div>
+          <div class="text-muted small mt-1">{{ total_bags }} of {{ lego_set.total_bag_count }} bags</div>
         </div>
       </div>
       {% endif %}
