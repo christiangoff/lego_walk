@@ -6,9 +6,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-import smtplib
-from email.mime.text import MIMEText
-from models import db, User, InviteCode, PasswordResetToken, Profile, WeightLog, LegoSet, Session
+from models import db, User, InviteCode, Profile, WeightLog, LegoSet, Session
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "lego-workout-secret-key-2024")
@@ -130,22 +128,85 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/invites", methods=["GET", "POST"])
+@app.route("/admin/users", methods=["GET", "POST"])
 @login_required
-def invites():
+def admin_users():
     if not current_user.is_admin:
         flash("You don't have permission to access that page.", "danger")
         return redirect(url_for("dashboard"))
+
+    temp_password = None
+
     if request.method == "POST":
-        code = InviteCode(
-            code=secrets.token_urlsafe(8),
-            created_by_id=current_user.id,
-        )
-        db.session.add(code)
-        db.session.commit()
-        flash(f"Invite code created: {code.code}", "success")
-    codes = InviteCode.query.filter_by(created_by_id=current_user.id).order_by(InviteCode.created_at.desc()).all()
-    return render_template("invites.html", codes=codes)
+        action = request.form.get("action")
+
+        if action == "add_user":
+            email = request.form.get("email", "").strip().lower()
+            display_name = request.form.get("display_name", "").strip()
+            pw = request.form.get("password", "").strip()
+            is_admin = bool(request.form.get("is_admin"))
+            if not email or not display_name or not pw:
+                flash("Email, name, and password are required.", "danger")
+            elif User.query.filter_by(email=email).first():
+                flash(f"{email} is already registered.", "danger")
+            else:
+                u = User(email=email, display_name=display_name, is_active=True, is_admin=is_admin)
+                u.set_password(pw)
+                db.session.add(u)
+                db.session.commit()
+                flash(f"User {display_name} ({email}) created.", "success")
+
+        elif action == "reset_password":
+            user_id = int(request.form.get("user_id"))
+            u = User.query.get(user_id)
+            if u:
+                temp_password = secrets.token_urlsafe(8)
+                u.set_password(temp_password)
+                db.session.commit()
+                flash(f"Password reset for {u.display_name}. Share the temporary password below.", "warning")
+
+        elif action == "toggle_admin":
+            user_id = int(request.form.get("user_id"))
+            u = User.query.get(user_id)
+            if u and u.id != current_user.id:
+                u.is_admin = not u.is_admin
+                db.session.commit()
+                flash(f"{u.display_name} admin status updated.", "success")
+
+        elif action == "toggle_active":
+            user_id = int(request.form.get("user_id"))
+            u = User.query.get(user_id)
+            if u and u.id != current_user.id:
+                u.is_active = not u.is_active
+                db.session.commit()
+                status = "activated" if u.is_active else "deactivated"
+                flash(f"{u.display_name} {status}.", "success")
+
+        elif action == "delete_user":
+            user_id = int(request.form.get("user_id"))
+            u = User.query.get(user_id)
+            if u and u.id != current_user.id:
+                Session.query.filter_by(user_id=u.id).delete()
+                WeightLog.query.filter_by(user_id=u.id).delete()
+                for ls in LegoSet.query.filter_by(user_id=u.id).all():
+                    db.session.delete(ls)
+                Profile.query.filter_by(user_id=u.id).delete()
+                InviteCode.query.filter(
+                    (InviteCode.created_by_id == u.id) | (InviteCode.used_by_id == u.id)
+                ).delete()
+                db.session.delete(u)
+                db.session.commit()
+                flash(f"User deleted.", "warning")
+
+        elif action == "gen_invite":
+            code = InviteCode(code=secrets.token_urlsafe(8), created_by_id=current_user.id)
+            db.session.add(code)
+            db.session.commit()
+            flash(f"Invite code created: {code.code}", "success")
+
+    users = User.query.order_by(User.created_at).all()
+    codes = InviteCode.query.order_by(InviteCode.created_at.desc()).all()
+    return render_template("admin_users.html", users=users, codes=codes, temp_password=temp_password)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -170,78 +231,6 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if current_user.is_authenticated:
-        return redirect(url_for("dashboard"))
-    reset_url = None
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        user = User.query.filter_by(email=email).first()
-        if user:
-            # Invalidate any existing unused tokens
-            PasswordResetToken.query.filter_by(user_id=user.id, used=False).delete()
-            token = PasswordResetToken(
-                token=secrets.token_urlsafe(32),
-                user_id=user.id,
-                expires_at=datetime.utcnow() + timedelta(hours=2),
-            )
-            db.session.add(token)
-            db.session.commit()
-            reset_url = url_for("reset_password", token=token.token, _external=True)
-
-            # Try to send email if SMTP is configured
-            smtp_host = os.environ.get("SMTP_HOST", "").strip()
-            smtp_user = os.environ.get("SMTP_USER", "").strip()
-            smtp_pass = os.environ.get("SMTP_PASSWORD", "").strip()
-            if smtp_host and smtp_user and smtp_pass:
-                try:
-                    msg = MIMEText(
-                        f"Hi {user.display_name},\n\n"
-                        f"Click the link below to reset your StudStep password.\n"
-                        f"This link expires in 2 hours.\n\n{reset_url}\n\n"
-                        f"If you didn't request this, ignore this email."
-                    )
-                    msg["Subject"] = "StudStep — Password Reset"
-                    msg["From"] = smtp_user
-                    msg["To"] = user.email
-                    with smtplib.SMTP_SSL(smtp_host, 465) as s:
-                        s.login(smtp_user, smtp_pass)
-                        s.send_message(msg)
-                    flash("Password reset email sent. Check your inbox.", "success")
-                    reset_url = None  # Don't show URL if email was sent
-                except Exception as e:
-                    flash(f"Email failed to send: {e}", "warning")
-            # No SMTP — show the link directly
-        else:
-            # Don't reveal whether email exists
-            flash("If that email is registered you'll see a reset link below.", "info")
-    return render_template("forgot_password.html", reset_url=reset_url)
-
-
-@app.route("/reset-password/<token>", methods=["GET", "POST"])
-def reset_password(token):
-    if current_user.is_authenticated:
-        return redirect(url_for("dashboard"))
-    record = PasswordResetToken.query.filter_by(token=token).first()
-    if not record or not record.is_valid:
-        flash("This reset link is invalid or has expired.", "danger")
-        return redirect(url_for("forgot_password"))
-    if request.method == "POST":
-        new_pw = request.form.get("new_password", "")
-        confirm_pw = request.form.get("confirm_password", "")
-        if not new_pw:
-            flash("Password cannot be blank.", "danger")
-        elif new_pw != confirm_pw:
-            flash("Passwords do not match.", "danger")
-        else:
-            user = User.query.get(record.user_id)
-            user.set_password(new_pw)
-            record.used = True
-            db.session.commit()
-            flash("Password updated. You can now sign in.", "success")
-            return redirect(url_for("login"))
-    return render_template("reset_password.html", token=token)
 
 
 # --------------------------------------------------------------------------- #

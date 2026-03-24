@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Admin — Users{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-3 align-items-center">
+  <div class="col">
+    <h2 class="fw-bold mb-0"><i class="bi bi-shield-fill lego-accent"></i> Admin</h2>
+    <p class="text-muted small mb-0">User management &amp; invite codes</p>
+  </div>
+</div>
+
+{% if temp_password %}
+<div class="alert alert-warning d-flex align-items-center gap-2">
+  <i class="bi bi-key-fill fs-4"></i>
+  <div>
+    <strong>Temporary password:</strong>
+    <code class="ms-2 user-select-all fs-5">{{ temp_password }}</code>
+    <div class="small mt-1">Share this with the user — they can change it from their Profile page.</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+
+  <!-- User list -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people-fill text-warning"></i> Users</span>
+        <button class="btn btn-sm btn-outline-warning" data-bs-toggle="collapse" data-bs-target="#addUserForm">
+          <i class="bi bi-person-plus-fill"></i> Add User
+        </button>
+      </div>
+
+      <!-- Add user form -->
+      <div class="collapse" id="addUserForm">
+        <div class="card-body border-bottom border-secondary pb-3">
+          <form method="POST">
+            <input type="hidden" name="action" value="add_user" />
+            <div class="row g-2">
+              <div class="col-sm-4">
+                <label class="form-label small fw-semibold">Display Name</label>
+                <input type="text" class="form-control form-control-sm" name="display_name" placeholder="Jane Smith" required />
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label small fw-semibold">Email</label>
+                <input type="email" class="form-control form-control-sm" name="email" placeholder="jane@example.com" required />
+              </div>
+              <div class="col-sm-3">
+                <label class="form-label small fw-semibold">Password</label>
+                <input type="text" class="form-control form-control-sm" name="password" placeholder="Temp password" required />
+              </div>
+              <div class="col-sm-1 d-flex align-items-end">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" name="is_admin" id="new_is_admin" />
+                  <label class="form-check-label small" for="new_is_admin">Admin</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-lego-yellow btn-sm fw-bold">
+                  <i class="bi bi-person-plus-fill"></i> Create User
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Users table -->
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr {% if not u.is_active %}class="opacity-50"{% endif %}>
+              <td class="fw-semibold">
+                {{ u.display_name }}
+                {% if u.id == current_user.id %}<span class="badge bg-secondary ms-1 small">You</span>{% endif %}
+              </td>
+              <td class="text-muted small">{{ u.email }}</td>
+              <td>
+                {% if u.is_admin %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-shield-fill"></i> Admin</span>
+                {% else %}
+                <span class="badge bg-secondary">User</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if u.is_active %}
+                <span class="badge bg-success">Active</span>
+                {% else %}
+                <span class="badge bg-danger">Inactive</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ u.created_at.strftime("%b %d, %Y") }}</td>
+              <td class="text-end">
+                <div class="d-flex gap-1 justify-content-end">
+                  {% if u.id != current_user.id %}
+                  <!-- Toggle admin -->
+                  <form method="POST" class="d-inline">
+                    <input type="hidden" name="action" value="toggle_admin" />
+                    <input type="hidden" name="user_id" value="{{ u.id }}" />
+                    <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-1"
+                            title="{{ 'Remove admin' if u.is_admin else 'Make admin' }}">
+                      <i class="bi bi-shield{% if u.is_admin %}-fill{% endif %}"></i>
+                    </button>
+                  </form>
+                  <!-- Toggle active -->
+                  <form method="POST" class="d-inline">
+                    <input type="hidden" name="action" value="toggle_active" />
+                    <input type="hidden" name="user_id" value="{{ u.id }}" />
+                    <button type="submit" class="btn btn-outline-secondary btn-sm py-0 px-1"
+                            title="{{ 'Deactivate' if u.is_active else 'Activate' }}">
+                      <i class="bi bi-{% if u.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                    </button>
+                  </form>
+                  <!-- Reset password -->
+                  <form method="POST" class="d-inline"
+                        onsubmit="return confirm('Reset password for {{ u.display_name }}?')">
+                    <input type="hidden" name="action" value="reset_password" />
+                    <input type="hidden" name="user_id" value="{{ u.id }}" />
+                    <button type="submit" class="btn btn-outline-info btn-sm py-0 px-1" title="Reset password">
+                      <i class="bi bi-key-fill"></i>
+                    </button>
+                  </form>
+                  <!-- Delete -->
+                  <form method="POST" class="d-inline"
+                        onsubmit="return confirm('Delete {{ u.display_name }}? This will remove all their data.')">
+                    <input type="hidden" name="action" value="delete_user" />
+                    <input type="hidden" name="user_id" value="{{ u.id }}" />
+                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete user">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invite codes -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-ticket-perforated-fill text-warning"></i> Invite Codes</span>
+        <form method="POST" class="d-inline">
+          <input type="hidden" name="action" value="gen_invite" />
+          <button type="submit" class="btn btn-sm btn-outline-warning">
+            <i class="bi bi-plus-lg"></i> Generate
+          </button>
+        </form>
+      </div>
+      <div class="card-body p-0">
+        {% if codes %}
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th>Code</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for code in codes %}
+              <tr>
+                <td>
+                  {% if not code.is_used %}
+                  <code class="user-select-all small">{{ code.code }}</code>
+                  {% else %}
+                  <code class="text-muted small">{{ code.code }}</code>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if code.is_used %}
+                  <span class="badge bg-secondary small">Used</span>
+                  {% else %}
+                  <span class="badge bg-warning text-dark small">Available</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted small p-3 mb-0">No codes yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

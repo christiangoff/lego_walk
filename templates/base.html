@@ -88,10 +88,10 @@
         {% if current_user.is_admin %}
         <li class="nav-item">
           <a
-            class="nav-link {% if request.endpoint == 'invites' %}active{% endif %}"
-            href="{{ url_for('invites') }}"
+            class="nav-link {% if request.endpoint == 'admin_users' %}active{% endif %}"
+            href="{{ url_for('admin_users') }}"
           >
-            <i class="bi bi-ticket-perforated-fill"></i> Invites
+            <i class="bi bi-shield-fill"></i> Admin
           </a>
         </li>
         {% endif %}
