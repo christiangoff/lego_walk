@@ -79,14 +79,6 @@
         </li>
         <li class="nav-item">
           <a
-            class="nav-link {% if request.endpoint == 'profile' %}active{% endif %}"
-            href="{{ url_for('profile') }}"
-          >
-            <i class="bi bi-person-fill"></i> Profile
-          </a>
-        </li>
-        <li class="nav-item">
-          <a
             class="nav-link {% if request.endpoint == 'data' %}active{% endif %}"
             href="{{ url_for('data') }}"
           >
@@ -103,10 +95,13 @@
           </a>
         </li>
         {% endif %}
-        <li class="nav-item d-flex align-items-center ms-2">
-          <span class="text-muted small me-2">
+        <li class="nav-item ms-2">
+          <a
+            class="nav-link {% if request.endpoint == 'profile' %}active{% endif %}"
+            href="{{ url_for('profile') }}"
+          >
             <i class="bi bi-person-circle"></i> {{ current_user.display_name }}
-          </span>
+          </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('logout') }}">
