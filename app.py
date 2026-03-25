@@ -4,6 +4,7 @@ import secrets
 import urllib.request
 import urllib.parse
 from datetime import date, datetime, timedelta
+from PIL import Image, ImageOps
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import db, User, InviteCode, Friendship, HighFive, Profile, WeightLog, LegoSet, Session
@@ -14,6 +15,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "lego_workout.db"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB upload limit
+AVATAR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "avatars")
+os.makedirs(AVATAR_DIR, exist_ok=True)
 
 db.init_app(app)
 
@@ -913,6 +917,24 @@ def profile():
             except Exception as e:
                 db.session.rollback()
                 flash(f"Error updating profile: {e}", "danger")
+        elif action == "upload_avatar":
+            file = request.files.get("avatar")
+            if file and file.filename:
+                ext = file.filename.rsplit(".", 1)[-1].lower()
+                if ext not in {"jpg", "jpeg", "png", "gif", "webp"}:
+                    flash("Invalid file type. Use JPG, PNG, GIF, or WebP.", "danger")
+                else:
+                    try:
+                        img = Image.open(file).convert("RGB")
+                        img = ImageOps.fit(img, (200, 200), Image.LANCZOS)
+                        filename = f"{current_user.id}.jpg"
+                        img.save(os.path.join(AVATAR_DIR, filename), "JPEG", quality=85)
+                        p.avatar_filename = filename
+                        db.session.commit()
+                        flash("Profile picture updated!", "success")
+                    except Exception as e:
+                        db.session.rollback()
+                        flash(f"Error uploading image: {e}", "danger")
         elif action == "add_weight":
             try:
                 weight = float(request.form["weight_lbs"])

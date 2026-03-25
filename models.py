@@ -89,6 +89,7 @@ class Profile(db.Model):
     # current weight kept here for quick access; history in WeightLog
     current_weight_lbs = db.Column(db.Float, nullable=True)
     location = db.Column(db.String(100), nullable=True)
+    avatar_filename = db.Column(db.String(255), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     def __repr__(self):

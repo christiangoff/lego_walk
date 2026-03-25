@@ -1,0 +1,20 @@
+{% macro render_avatar(user, size='md') %}
+  {% if size == 'md' %}
+    {% set px = '80' %}
+    {% set fs = '2.5rem' %}
+  {% else %}
+    {% set px = '40' %}
+    {% set fs = '1.2rem' %}
+  {% endif %}
+  {% if user.profile and user.profile.avatar_filename %}
+    <img src="/static/avatars/{{ user.profile.avatar_filename }}"
+         class="rounded-circle flex-shrink-0"
+         style="width:{{ px }}px;height:{{ px }}px;object-fit:cover;"
+         alt="{{ user.display_name }}">
+  {% else %}
+    <div class="profile-avatar profile-avatar-{{ size }} flex-shrink-0"
+         style="width:{{ px }}px;height:{{ px }}px;font-size:{{ fs }};">
+      <i class="bi bi-person-fill"></i>
+    </div>
+  {% endif %}
+{% endmacro %}

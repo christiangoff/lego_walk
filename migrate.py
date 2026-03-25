@@ -45,6 +45,7 @@ MIGRATIONS = [
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )"""),
     ("Add location to profile", "ALTER TABLE profile ADD COLUMN location VARCHAR(100)"),
+    ("Add avatar_filename to profile", "ALTER TABLE profile ADD COLUMN avatar_filename VARCHAR(255)"),
     ("Add invite_code table", """CREATE TABLE IF NOT EXISTS invite_code (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code VARCHAR(32) NOT NULL UNIQUE,

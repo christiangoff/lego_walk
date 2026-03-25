@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from '_macros.html' import render_avatar %}
 {% block title %}Dashboard - StudStep{% endblock %}
 
 {% block content %}
@@ -189,9 +190,12 @@
     <div class="list-group list-group-flush">
       {% for hf in recent_high_fives %}
       <div class="list-group-item bg-transparent border-secondary px-3 py-2 d-flex justify-content-between align-items-center">
-        <div>
-          <a href="{{ url_for('friend_profile', user_id=hf.from_user_id) }}" class="fw-semibold text-decoration-none">{{ hf.from_user.display_name }}</a>
-          <span class="text-muted small ms-1">gave you a high five</span>
+        <div class="d-flex align-items-center gap-2">
+          {{ render_avatar(hf.from_user, size='sm') }}
+          <div>
+            <a href="{{ url_for('friend_profile', user_id=hf.from_user_id) }}" class="fw-semibold text-decoration-none">{{ hf.from_user.display_name }}</a>
+            <span class="text-muted small ms-1">gave you a high five</span>
+          </div>
         </div>
         <span class="text-muted small">{{ hf.created_at.strftime("%b %d") }}</span>
       </div>
