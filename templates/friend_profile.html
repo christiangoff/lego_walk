@@ -100,7 +100,14 @@
                 <td>{{ "%.2f"|format(s.distance_miles) if s.distance_miles else "—" }} mi</td>
                 <td>
                   {% if s.lego_set %}
-                  <span class="badge bg-warning text-dark">{{ s.lego_set.set_number }}</span>
+                  <a href="https://rebrickable.com/sets/{{ s.lego_set.set_number }}-1/"
+                     target="_blank" rel="noopener"
+                     class="badge bg-warning text-dark text-decoration-none">
+                    {{ s.lego_set.set_number }}
+                  </a>
+                  <span class="small text-muted ms-1 d-none d-md-inline">
+                    {{ s.lego_set.name[:24] }}{% if s.lego_set.name|length > 24 %}…{% endif %}
+                  </span>
                   {% else %}<span class="text-muted">—</span>{% endif %}
                 </td>
               </tr>
