@@ -925,7 +925,9 @@ def profile():
                     flash("Invalid file type. Use JPG, PNG, GIF, or WebP.", "danger")
                 else:
                     try:
-                        img = Image.open(file).convert("RGB")
+                        img = Image.open(file)
+                        img = ImageOps.exif_transpose(img)
+                        img = img.convert("RGB")
                         img = ImageOps.fit(img, (200, 200), Image.LANCZOS)
                         filename = f"{current_user.id}.jpg"
                         img.save(os.path.join(AVATAR_DIR, filename), "JPEG", quality=85)
