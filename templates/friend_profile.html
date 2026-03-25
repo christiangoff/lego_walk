@@ -9,7 +9,7 @@
     </h2>
     <p class="text-muted small mb-0">Friend profile</p>
   </div>
-  <div class="col-auto d-flex gap-2">
+  <div class="col-auto d-flex gap-2 align-items-center">
     <!-- High five -->
     <form method="POST" action="{{ url_for('high_five', user_id=friend.id) }}">
       <button type="submit" class="btn btn-lego-yellow fw-bold"
@@ -22,11 +22,11 @@
     </form>
     <form method="POST" action="{{ url_for('friend_remove', user_id=friend.id) }}"
           onsubmit="return confirm('Remove {{ friend.display_name }} as a friend?')">
-      <button type="submit" class="btn btn-outline-secondary btn-sm">
+      <button type="submit" class="btn btn-outline-secondary">
         <i class="bi bi-person-dash"></i> Remove
       </button>
     </form>
-    <a href="{{ url_for('friends') }}" class="btn btn-outline-secondary btn-sm">
+    <a href="{{ url_for('friends') }}" class="btn btn-outline-secondary">
       <i class="bi bi-arrow-left"></i> Back
     </a>
   </div>
