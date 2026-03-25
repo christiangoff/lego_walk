@@ -132,7 +132,7 @@
         {% if sets_in_progress %}
         <div class="list-group list-group-flush">
           {% for ls in sets_in_progress %}
-          <div class="list-group-item bg-transparent border-secondary">
+          <div class="list-group-item bg-transparent border-secondary px-3">
             <div class="d-flex align-items-center gap-2 mb-1">
               {% if ls.image_url %}
               <img src="{{ ls.image_url }}" alt="{{ ls.name }}" style="width:40px;height:40px;object-fit:contain;">
