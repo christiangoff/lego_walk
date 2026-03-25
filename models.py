@@ -45,6 +45,25 @@ class HighFive(db.Model):
     from_user = db.relationship("User", foreign_keys=[from_user_id])
 
 
+class FeedLike(db.Model):
+    __tablename__ = "feed_like"
+    id = db.Column(db.Integer, primary_key=True)
+    event_key = db.Column(db.String(100), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship("User", foreign_keys=[user_id])
+
+
+class FeedComment(db.Model):
+    __tablename__ = "feed_comment"
+    id = db.Column(db.Integer, primary_key=True)
+    event_key = db.Column(db.String(100), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    body = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship("User", foreign_keys=[user_id])
+
+
 class PasswordResetToken(db.Model):
     __tablename__ = "password_reset_token"
     id = db.Column(db.Integer, primary_key=True)

@@ -151,12 +151,12 @@
         {% if feed %}
         <div class="list-group list-group-flush">
           {% for event in feed %}
-          <div class="list-group-item bg-transparent border-secondary px-3 py-2">
+          <div class="list-group-item bg-transparent border-secondary px-3 py-2" id="feed-{{ event.event_key }}">
             <div class="d-flex align-items-start gap-2">
 
               {% if event.type == "set_complete" %}
               <span class="fs-5">🧱</span>
-              <div>
+              <div class="flex-grow-1">
                 <a href="{{ url_for('friend_profile', user_id=event.user_id) }}" class="fw-semibold text-decoration-none">{{ event.user_name }}</a>
                 finished building
                 <a href="https://rebrickable.com/sets/{{ event.set_number }}-1/"
@@ -168,7 +168,7 @@
 
               {% elif event.type == "milestone" %}
               <span class="fs-5">🏅</span>
-              <div>
+              <div class="flex-grow-1">
                 <a href="{{ url_for('friend_profile', user_id=event.user_id) }}" class="fw-semibold text-decoration-none">{{ event.user_name }}</a>
                 hit <span class="text-warning fw-bold">{{ event.miles }} miles</span>!
                 <div class="text-muted" style="font-size:0.75rem;">{{ event.date.strftime("%b %d") }}</div>
@@ -176,7 +176,7 @@
 
               {% elif event.type == "high_five" %}
               <span class="fs-5">🖐️</span>
-              <div>
+              <div class="flex-grow-1">
                 <a href="{{ url_for('friend_profile', user_id=event.user_id) }}" class="fw-semibold text-decoration-none">{{ event.user_name }}</a>
                 got a high five from
                 {% if event.from_user_id == current_user.id %}
@@ -200,6 +200,58 @@
               {% endif %}
 
             </div>
+
+            <!-- Like & comment bar -->
+            {% set like_count = likes_by_key.get(event.event_key, 0) %}
+            {% set my_liked = event.event_key in my_liked_keys %}
+            {% set event_comments = comments_by_key.get(event.event_key, []) %}
+            <div class="d-flex align-items-center gap-3 mt-2" style="font-size:0.8rem;">
+              <form method="POST" action="{{ url_for('feed_like') }}" class="d-inline">
+                <input type="hidden" name="event_key" value="{{ event.event_key }}">
+                <button type="submit" class="btn btn-sm py-0 px-1 border-0 {% if my_liked %}text-danger{% else %}text-muted{% endif %}"
+                        style="font-size:0.85rem; background:none;">
+                  {% if my_liked %}❤️{% else %}🤍{% endif %}
+                  {% if like_count %}<span class="ms-1">{{ like_count }}</span>{% endif %}
+                </button>
+              </form>
+              <button class="btn btn-sm py-0 px-1 border-0 text-muted" style="font-size:0.85rem; background:none;"
+                      onclick="toggleComment('{{ event.event_key }}')">
+                💬{% if event_comments %} <span class="ms-1">{{ event_comments | length }}</span>{% endif %}
+              </button>
+            </div>
+
+            <!-- Comments -->
+            {% if event_comments %}
+            <div class="mt-2 ps-2 border-start border-secondary">
+              {% for c in event_comments %}
+              <div class="d-flex justify-content-between align-items-start mb-1" style="font-size:0.8rem;">
+                <div>
+                  <span class="fw-semibold">{{ c.user.display_name }}</span>
+                  <span class="text-muted ms-1">{{ c.body }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-1 ms-2 text-muted" style="font-size:0.7rem; white-space:nowrap;">
+                  {{ c.created_at.strftime("%b %d") }}
+                  {% if c.user_id == current_user.id %}
+                  <form method="POST" action="{{ url_for('feed_comment_delete', comment_id=c.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm border-0 p-0 text-muted" style="background:none; font-size:0.7rem;"
+                            onclick="return confirm('Delete comment?')">✕</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Comment input (hidden by default) -->
+            <div id="comment-box-{{ event.event_key }}" class="mt-2 d-none">
+              <form method="POST" action="{{ url_for('feed_comment') }}" class="d-flex gap-1">
+                <input type="hidden" name="event_key" value="{{ event.event_key }}">
+                <input type="text" name="body" class="form-control form-control-sm" placeholder="Add a comment…" maxlength="500" required>
+                <button type="submit" class="btn btn-sm btn-lego-yellow">Post</button>
+              </form>
+            </div>
+
           </div>
           {% endfor %}
         </div>
@@ -216,6 +268,16 @@
 
 {% block scripts %}
 <script>
+function toggleComment(eventKey) {
+  const box = document.getElementById('comment-box-' + eventKey);
+  if (box) {
+    box.classList.toggle('d-none');
+    if (!box.classList.contains('d-none')) {
+      box.querySelector('input[name="body"]').focus();
+    }
+  }
+}
+
 function filterFriends(mode) {
   const items = document.querySelectorAll('.friend-item');
   const noMsg = document.getElementById('no-hanging-msg');

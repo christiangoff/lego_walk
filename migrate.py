@@ -46,6 +46,19 @@ MIGRATIONS = [
 )"""),
     ("Add location to profile", "ALTER TABLE profile ADD COLUMN location VARCHAR(100)"),
     ("Add avatar_filename to profile", "ALTER TABLE profile ADD COLUMN avatar_filename VARCHAR(255)"),
+    ("Add feed_like table", """CREATE TABLE IF NOT EXISTS feed_like (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_key VARCHAR(100) NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES user(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)"""),
+    ("Add feed_comment table", """CREATE TABLE IF NOT EXISTS feed_comment (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_key VARCHAR(100) NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES user(id),
+    body VARCHAR(500) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)"""),
     ("Add invite_code table", """CREATE TABLE IF NOT EXISTS invite_code (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code VARCHAR(32) NOT NULL UNIQUE,

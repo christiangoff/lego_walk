@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from PIL import Image, ImageOps
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, InviteCode, Friendship, HighFive, Profile, WeightLog, LegoSet, Session
+from models import db, User, InviteCode, Friendship, HighFive, FeedLike, FeedComment, Profile, WeightLog, LegoSet, Session
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "lego-workout-secret-key-2024")
@@ -726,6 +726,7 @@ def friends():
         for ls in completed_sets:
             feed.append({
                 "type": "set_complete",
+                "event_key": f"set_complete:{ls.id}",
                 "date": datetime(ls.completion_date.year, ls.completion_date.month, ls.completion_date.day),
                 "user_id": ls.user_id,
                 "user_name": friend_name.get(ls.user_id, "Friend"),
@@ -749,6 +750,7 @@ def friends():
                         if event_dt >= cutoff:
                             feed.append({
                                 "type": "milestone",
+                                "event_key": f"milestone:{fid}:{m}",
                                 "date": event_dt,
                                 "user_id": fid,
                                 "user_name": friend_name.get(fid, "Friend"),
@@ -764,6 +766,7 @@ def friends():
         for hf in high_fives:
             feed.append({
                 "type": "high_five",
+                "event_key": f"high_five:{hf.id}",
                 "date": hf.created_at,
                 "user_id": hf.to_user_id,
                 "user_name": friend_name.get(hf.to_user_id, "Friend"),
@@ -774,6 +777,23 @@ def friends():
         feed.sort(key=lambda e: e["date"], reverse=True)
         feed = feed[:50]
 
+        # Load likes and comments for feed events
+        event_keys = [e["event_key"] for e in feed]
+        all_likes = FeedLike.query.filter(FeedLike.event_key.in_(event_keys)).all() if event_keys else []
+        all_comments = FeedComment.query.filter(FeedComment.event_key.in_(event_keys)).order_by(FeedComment.created_at).all() if event_keys else []
+
+        likes_by_key = {}
+        my_liked_keys = set()
+        for like in all_likes:
+            likes_by_key.setdefault(like.event_key, 0)
+            likes_by_key[like.event_key] += 1
+            if like.user_id == uid:
+                my_liked_keys.add(like.event_key)
+
+        comments_by_key = {}
+        for comment in all_comments:
+            comments_by_key.setdefault(comment.event_key, []).append(comment)
+
     return render_template("friends.html",
         friend_users=friend_users,
         received=received,
@@ -783,7 +803,44 @@ def friends():
         feed=feed,
         open_high_five_ids=open_high_five_ids,
         sent_today_ids=sent_today_ids,
+        likes_by_key=likes_by_key if feed else {},
+        my_liked_keys=my_liked_keys if feed else set(),
+        comments_by_key=comments_by_key if feed else {},
     )
+
+
+@app.route("/feed/like", methods=["POST"])
+@login_required
+def feed_like():
+    event_key = request.form.get("event_key", "").strip()
+    if event_key:
+        existing = FeedLike.query.filter_by(event_key=event_key, user_id=current_user.id).first()
+        if existing:
+            db.session.delete(existing)
+        else:
+            db.session.add(FeedLike(event_key=event_key, user_id=current_user.id))
+        db.session.commit()
+    return redirect(url_for("friends"))
+
+
+@app.route("/feed/comment", methods=["POST"])
+@login_required
+def feed_comment():
+    event_key = request.form.get("event_key", "").strip()
+    body = request.form.get("body", "").strip()
+    if event_key and body:
+        db.session.add(FeedComment(event_key=event_key, user_id=current_user.id, body=body[:500]))
+        db.session.commit()
+    return redirect(url_for("friends") + f"#feed-{event_key}")
+
+
+@app.route("/feed/comment/<int:comment_id>/delete", methods=["POST"])
+@login_required
+def feed_comment_delete(comment_id):
+    comment = FeedComment.query.filter_by(id=comment_id, user_id=current_user.id).first_or_404()
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for("friends"))
 
 
 @app.route("/friends/request/<int:user_id>", methods=["POST"])
