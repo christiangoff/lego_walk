@@ -266,6 +266,32 @@ def dashboard():
     week_miles = round(sum(s.distance_miles or 0 for s in week_sessions), 2)
     week_minutes = int(sum(s.duration_minutes or 0 for s in week_sessions))
 
+    # Social stats
+    uid = current_user.id
+    accepted_friendships = Friendship.query.filter(
+        ((Friendship.requester_id == uid) | (Friendship.addressee_id == uid)),
+        Friendship.status == "accepted"
+    ).all()
+    friend_ids = {f.addressee_id if f.requester_id == uid else f.requester_id for f in accepted_friendships}
+    friend_count = len(friend_ids)
+
+    pending_requests = Friendship.query.filter_by(addressee_id=uid, status="pending").count()
+
+    recent_high_fives = (
+        HighFive.query
+        .filter_by(to_user_id=uid)
+        .order_by(HighFive.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    total_high_fives = HighFive.query.filter_by(to_user_id=uid).count()
+
+    today_start = datetime.combine(date.today(), datetime.min.time())
+    received_today = {hf.from_user_id for hf in HighFive.query.filter(HighFive.to_user_id == uid, HighFive.created_at >= today_start).all()}
+    sent_today = {hf.to_user_id for hf in HighFive.query.filter(HighFive.from_user_id == uid, HighFive.created_at >= today_start).all()}
+    open_today = len(received_today - sent_today)
+    closed_today = len(received_today & sent_today)
+
     return render_template(
         "index.html",
         profile=profile,
@@ -280,6 +306,12 @@ def dashboard():
         week_miles=week_miles,
         week_sessions=len(week_sessions),
         week_minutes=week_minutes,
+        friend_count=friend_count,
+        pending_requests=pending_requests,
+        recent_high_fives=recent_high_fives,
+        total_high_fives=total_high_fives,
+        open_today=open_today,
+        closed_today=closed_today,
     )
 
 
@@ -616,6 +648,24 @@ def friends():
     sent = Friendship.query.filter_by(requester_id=uid, status="pending").all()
     sent_ids = {f.addressee_id for f in sent}
 
+    # Friends who high-fived you today but you haven't returned it
+    today_start = datetime.combine(date.today(), datetime.min.time())
+    received_today_ids = {
+        hf.from_user_id for hf in
+        HighFive.query.filter(
+            HighFive.to_user_id == uid,
+            HighFive.created_at >= today_start
+        ).all()
+    }
+    sent_today_ids = {
+        hf.to_user_id for hf in
+        HighFive.query.filter(
+            HighFive.from_user_id == uid,
+            HighFive.created_at >= today_start
+        ).all()
+    }
+    open_high_five_ids = received_today_ids - sent_today_ids
+
     # Search
     query = request.args.get("q", "").strip()
     results = []
@@ -626,12 +676,81 @@ def friends():
             (User.display_name.ilike(f"%{query}%") | User.email.ilike(f"%{query}%"))
         ).all()
 
+    # Social feed — last 30 days of highlights from friends
+    feed = []
+    if friend_ids:
+        cutoff = datetime.utcnow() - timedelta(days=30)
+        MILESTONES = [5, 10, 25, 50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
+
+        # Build a display_name lookup
+        friend_name = {u.id: u.display_name for u in friend_users}
+
+        # 1. Set completions
+        completed_sets = LegoSet.query.filter(
+            LegoSet.user_id.in_(friend_ids),
+            LegoSet.completion_date != None,
+            LegoSet.completion_date >= cutoff.date()
+        ).all()
+        for ls in completed_sets:
+            feed.append({
+                "type": "set_complete",
+                "date": datetime(ls.completion_date.year, ls.completion_date.month, ls.completion_date.day),
+                "user_id": ls.user_id,
+                "user_name": friend_name.get(ls.user_id, "Friend"),
+                "set_name": ls.name,
+                "set_number": ls.set_number,
+            })
+
+        # 2. Mile milestones — check each friend's cumulative miles per session
+        for fid in friend_ids:
+            sessions = Session.query.filter_by(user_id=fid).order_by(Session.date.asc(), Session.id.asc()).all()
+            cumulative = 0.0
+            next_milestone_idx = 0
+            for s in sessions:
+                miles = float(s.distance_miles or 0)
+                prev = cumulative
+                cumulative += miles
+                while next_milestone_idx < len(MILESTONES) and cumulative >= MILESTONES[next_milestone_idx]:
+                    m = MILESTONES[next_milestone_idx]
+                    if prev < m:  # crossed this milestone in this session
+                        event_dt = datetime(s.date.year, s.date.month, s.date.day)
+                        if event_dt >= cutoff:
+                            feed.append({
+                                "type": "milestone",
+                                "date": event_dt,
+                                "user_id": fid,
+                                "user_name": friend_name.get(fid, "Friend"),
+                                "miles": m,
+                            })
+                    next_milestone_idx += 1
+
+        # 3. High fives received
+        high_fives = HighFive.query.filter(
+            HighFive.to_user_id.in_(friend_ids),
+            HighFive.created_at >= cutoff
+        ).all()
+        for hf in high_fives:
+            feed.append({
+                "type": "high_five",
+                "date": hf.created_at,
+                "user_id": hf.to_user_id,
+                "user_name": friend_name.get(hf.to_user_id, "Friend"),
+                "from_user_id": hf.from_user_id,
+                "from_name": hf.from_user.display_name if hf.from_user else "Someone",
+            })
+
+        feed.sort(key=lambda e: e["date"], reverse=True)
+        feed = feed[:50]
+
     return render_template("friends.html",
         friend_users=friend_users,
         received=received,
         sent_ids=sent_ids,
         results=results,
         query=query,
+        feed=feed,
+        open_high_five_ids=open_high_five_ids,
+        sent_today_ids=sent_today_ids,
     )
 
 

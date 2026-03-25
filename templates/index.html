@@ -57,6 +57,48 @@
   </div>
 </div>
 
+<!-- Social stat cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('friends') }}" class="text-decoration-none">
+      <div class="stat-card card h-100">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon text-primary"><i class="bi bi-people-fill"></i></div>
+          <div class="stat-value">{{ friend_count }}</div>
+          <div class="stat-label">Friends</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon">🖐️</div>
+        <div class="stat-value">{{ total_high_fives }}</div>
+        <div class="stat-label">High Fives</div>
+        {% if open_today %}
+        <div class="mt-1" style="font-size:0.7rem;">
+          <span class="badge bg-warning text-dark">{{ open_today }} left hanging</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% if pending_requests %}
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('friends') }}" class="text-decoration-none">
+      <div class="stat-card card h-100 border-warning">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon text-warning"><i class="bi bi-bell-fill"></i></div>
+          <div class="stat-value text-warning">{{ pending_requests }}</div>
+          <div class="stat-label">Friend Request{{ 's' if pending_requests != 1 }}</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
 <!-- This week + sets completed -->
 <div class="row g-3 mb-4">
   <div class="col-md-6">
@@ -135,6 +177,29 @@
     </div>
   </div>
 </div>
+
+<!-- High Fives -->
+{% if recent_high_fives %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center fw-semibold">
+    <span>🖐️ Recent High Fives</span>
+    <span class="badge bg-secondary">{{ total_high_fives }} total</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="list-group list-group-flush">
+      {% for hf in recent_high_fives %}
+      <div class="list-group-item bg-transparent border-secondary px-3 py-2 d-flex justify-content-between align-items-center">
+        <div>
+          <a href="{{ url_for('friend_profile', user_id=hf.from_user_id) }}" class="fw-semibold text-decoration-none">{{ hf.from_user.display_name }}</a>
+          <span class="text-muted small ms-1">gave you a high five</span>
+        </div>
+        <span class="text-muted small">{{ hf.created_at.strftime("%b %d") }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <!-- Recent Sessions -->
 <div class="card mb-4">
