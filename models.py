@@ -68,6 +68,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
+    profile = db.relationship("Profile", foreign_keys="Profile.user_id", uselist=False, lazy="joined")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
@@ -87,6 +88,7 @@ class Profile(db.Model):
     age = db.Column(db.Integer, nullable=True)
     # current weight kept here for quick access; history in WeightLog
     current_weight_lbs = db.Column(db.Float, nullable=True)
+    location = db.Column(db.String(100), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     def __repr__(self):

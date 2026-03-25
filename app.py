@@ -628,6 +628,34 @@ def delete_set(set_id):
 # --------------------------------------------------------------------------- #
 #  Social
 # --------------------------------------------------------------------------- #
+@app.route("/user/<int:user_id>")
+@login_required
+def public_profile(user_id):
+    user = User.query.get_or_404(user_id)
+    profile = Profile.query.filter_by(user_id=user_id).first()
+    uid = current_user.id
+
+    friendship = Friendship.query.filter(
+        ((Friendship.requester_id == uid) & (Friendship.addressee_id == user_id)) |
+        ((Friendship.requester_id == user_id) & (Friendship.addressee_id == uid))
+    ).first()
+    is_friend = friendship and friendship.status == "accepted"
+    request_sent = friendship and friendship.status == "pending" and friendship.requester_id == uid
+
+    sessions = Session.query.filter_by(user_id=user_id).all()
+    total_miles = round(sum(s.distance_miles or 0 for s in sessions), 2)
+    total_sessions = len(sessions)
+
+    return render_template("public_profile.html",
+        user=user,
+        profile=profile,
+        is_friend=is_friend,
+        request_sent=request_sent,
+        total_miles=total_miles,
+        total_sessions=total_sessions,
+    )
+
+
 @app.route("/friends")
 @login_required
 def friends():
@@ -879,6 +907,7 @@ def profile():
                 p.height_inches = float(height) if height else None
                 age = request.form.get("age", "").strip()
                 p.age = int(age) if age else None
+                p.location = request.form.get("location", "").strip() or None
                 db.session.commit()
                 flash("Profile updated!", "success")
             except Exception as e:

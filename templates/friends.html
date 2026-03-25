@@ -33,20 +33,20 @@
             {% for u in results %}
             <div class="d-flex align-items-center justify-content-between py-2 border-bottom border-secondary">
               <div>
-                <div class="fw-semibold small">{{ u.display_name }}</div>
+                <div class="fw-semibold small">
+                  <a href="{{ url_for('public_profile', user_id=u.id) }}" class="text-decoration-none">{{ u.display_name }}</a>
+                </div>
+                {% if u.id in (friend_users | map(attribute='id') | list) %}
                 <div class="text-muted" style="font-size:0.75rem;">{{ u.email }}</div>
+                {% endif %}
+                {% if u.profile and u.profile.location %}
+                <div class="text-muted" style="font-size:0.75rem;"><i class="bi bi-geo-alt"></i> {{ u.profile.location }}</div>
+                {% endif %}
               </div>
               {% if u.id in sent_ids %}
               <span class="badge bg-secondary">Requested</span>
               {% elif u.id in (friend_users | map(attribute='id') | list) %}
               <span class="badge bg-success">Friends</span>
-              {% else %}
-              <form method="POST" action="{{ url_for('friend_request', user_id=u.id) }}">
-                <input type="hidden" name="q" value="{{ query }}" />
-                <button type="submit" class="btn btn-sm btn-outline-warning">
-                  <i class="bi bi-person-plus-fill"></i> Add
-                </button>
-              </form>
               {% endif %}
             </div>
             {% endfor %}

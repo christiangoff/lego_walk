@@ -44,6 +44,7 @@ MIGRATIONS = [
     used BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )"""),
+    ("Add location to profile", "ALTER TABLE profile ADD COLUMN location VARCHAR(100)"),
     ("Add invite_code table", """CREATE TABLE IF NOT EXISTS invite_code (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code VARCHAR(32) NOT NULL UNIQUE,

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ user.display_name }} — StudStep{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-4 align-items-center">
+  <div class="col">
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-person-fill lego-accent"></i> {{ user.display_name }}
+    </h2>
+    {% if profile and profile.location %}
+    <p class="text-muted small mb-0"><i class="bi bi-geo-alt"></i> {{ profile.location }}</p>
+    {% endif %}
+  </div>
+  <div class="col-auto d-flex gap-2">
+    {% if is_friend %}
+      <a href="{{ url_for('friend_profile', user_id=user.id) }}" class="btn btn-outline-warning">
+        <i class="bi bi-person-lines-fill"></i> View Full Profile
+      </a>
+    {% elif request_sent %}
+      <span class="btn btn-secondary disabled">Requested</span>
+    {% else %}
+      <form method="POST" action="{{ url_for('friend_request', user_id=user.id) }}">
+        <button type="submit" class="btn btn-outline-warning">
+          <i class="bi bi-person-plus-fill"></i> Add Friend
+        </button>
+      </form>
+    {% endif %}
+    <a href="{{ url_for('friends') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-warning"><i class="bi bi-geo-alt-fill"></i></div>
+        <div class="stat-value">{{ total_miles }}</div>
+        <div class="stat-label">Total Miles</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-info"><i class="bi bi-activity"></i></div>
+        <div class="stat-value">{{ total_sessions }}</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

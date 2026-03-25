@@ -29,6 +29,7 @@
           </div>
           <h4 class="fw-bold mb-0">{{ profile.name }}</h4>
           {% if profile.age %}<p class="text-muted mb-0">Age {{ profile.age }}</p>{% endif %}
+          {% if profile.location %}<p class="text-muted small mb-0"><i class="bi bi-geo-alt"></i> {{ profile.location }}</p>{% endif %}
         </div>
 
         <ul class="list-group list-group-flush">
@@ -74,6 +75,11 @@
             <div class="mb-3">
               <label class="form-label fw-semibold">Name</label>
               <input type="text" class="form-control" name="name" value="{{ profile.name }}" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Location</label>
+              <input type="text" class="form-control" name="location"
+                     value="{{ profile.location or '' }}" placeholder="City, State or Country" maxlength="100" />
             </div>
             <div class="row g-2 mb-3">
               <div class="col-6">
