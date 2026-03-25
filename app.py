@@ -6,7 +6,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, InviteCode, Profile, WeightLog, LegoSet, Session
+from models import db, User, InviteCode, Friendship, HighFive, Profile, WeightLog, LegoSet, Session
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "lego-workout-secret-key-2024")
@@ -593,6 +593,159 @@ def delete_set(set_id):
 
 # --------------------------------------------------------------------------- #
 #  Profile
+# --------------------------------------------------------------------------- #
+#  Social
+# --------------------------------------------------------------------------- #
+@app.route("/friends")
+@login_required
+def friends():
+    uid = current_user.id
+    # Accepted friendships
+    accepted = Friendship.query.filter(
+        ((Friendship.requester_id == uid) | (Friendship.addressee_id == uid)),
+        Friendship.status == "accepted"
+    ).all()
+    friend_ids = set()
+    for f in accepted:
+        friend_ids.add(f.addressee_id if f.requester_id == uid else f.requester_id)
+    friend_users = User.query.filter(User.id.in_(friend_ids)).all() if friend_ids else []
+
+    # Pending received requests
+    received = Friendship.query.filter_by(addressee_id=uid, status="pending").all()
+    # Pending sent requests
+    sent = Friendship.query.filter_by(requester_id=uid, status="pending").all()
+    sent_ids = {f.addressee_id for f in sent}
+
+    # Search
+    query = request.args.get("q", "").strip()
+    results = []
+    if query:
+        results = User.query.filter(
+            User.id != uid,
+            User.is_active == True,
+            (User.display_name.ilike(f"%{query}%") | User.email.ilike(f"%{query}%"))
+        ).all()
+
+    return render_template("friends.html",
+        friend_users=friend_users,
+        received=received,
+        sent_ids=sent_ids,
+        results=results,
+        query=query,
+    )
+
+
+@app.route("/friends/request/<int:user_id>", methods=["POST"])
+@login_required
+def friend_request(user_id):
+    if user_id == current_user.id:
+        flash("You can't add yourself.", "danger")
+        return redirect(url_for("friends"))
+    existing = Friendship.query.filter(
+        ((Friendship.requester_id == current_user.id) & (Friendship.addressee_id == user_id)) |
+        ((Friendship.requester_id == user_id) & (Friendship.addressee_id == current_user.id))
+    ).first()
+    if not existing:
+        db.session.add(Friendship(requester_id=current_user.id, addressee_id=user_id))
+        db.session.commit()
+        flash("Friend request sent.", "success")
+    return redirect(url_for("friends", q=request.form.get("q", "")))
+
+
+@app.route("/friends/accept/<int:friendship_id>", methods=["POST"])
+@login_required
+def friend_accept(friendship_id):
+    f = Friendship.query.filter_by(id=friendship_id, addressee_id=current_user.id, status="pending").first_or_404()
+    f.status = "accepted"
+    db.session.commit()
+    flash(f"You and {f.requester.display_name} are now friends.", "success")
+    return redirect(url_for("friends"))
+
+
+@app.route("/friends/decline/<int:friendship_id>", methods=["POST"])
+@login_required
+def friend_decline(friendship_id):
+    f = Friendship.query.filter_by(id=friendship_id, addressee_id=current_user.id, status="pending").first_or_404()
+    db.session.delete(f)
+    db.session.commit()
+    return redirect(url_for("friends"))
+
+
+@app.route("/friends/remove/<int:user_id>", methods=["POST"])
+@login_required
+def friend_remove(user_id):
+    f = Friendship.query.filter(
+        ((Friendship.requester_id == current_user.id) & (Friendship.addressee_id == user_id)) |
+        ((Friendship.requester_id == user_id) & (Friendship.addressee_id == current_user.id))
+    ).first_or_404()
+    db.session.delete(f)
+    db.session.commit()
+    flash("Friend removed.", "warning")
+    return redirect(url_for("friends"))
+
+
+@app.route("/friends/<int:user_id>")
+@login_required
+def friend_profile(user_id):
+    # Must be friends
+    friendship = Friendship.query.filter(
+        ((Friendship.requester_id == current_user.id) & (Friendship.addressee_id == user_id)) |
+        ((Friendship.requester_id == user_id) & (Friendship.addressee_id == current_user.id)),
+        Friendship.status == "accepted"
+    ).first_or_404()
+
+    friend = User.query.get_or_404(user_id)
+    sessions = Session.query.filter_by(user_id=user_id).order_by(Session.date.desc(), Session.created_at.desc()).all()
+    sets_in_progress = LegoSet.query.filter_by(user_id=user_id, completed=False).all()
+    sets_completed_count = LegoSet.query.filter_by(user_id=user_id, completed=True).count()
+
+    total_miles = round(sum(s.distance_miles or 0 for s in sessions), 2)
+    total_calories = int(sum(s.calories_burned or 0 for s in sessions))
+    total_sessions = len(sessions)
+    recent_sessions = sessions[:5]
+
+    # High five counts
+    high_fives_received = HighFive.query.filter_by(to_user_id=user_id).count()
+    already_highfived_today = HighFive.query.filter_by(
+        from_user_id=current_user.id, to_user_id=user_id
+    ).filter(HighFive.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0)).first()
+
+    return render_template("friend_profile.html",
+        friend=friend,
+        recent_sessions=recent_sessions,
+        sets_in_progress=sets_in_progress,
+        sets_completed_count=sets_completed_count,
+        total_miles=total_miles,
+        total_calories=total_calories,
+        total_sessions=total_sessions,
+        high_fives_received=high_fives_received,
+        already_highfived_today=already_highfived_today,
+    )
+
+
+@app.route("/friends/<int:user_id>/highfive", methods=["POST"])
+@login_required
+def high_five(user_id):
+    # Must be friends
+    Friendship.query.filter(
+        ((Friendship.requester_id == current_user.id) & (Friendship.addressee_id == user_id)) |
+        ((Friendship.requester_id == user_id) & (Friendship.addressee_id == current_user.id)),
+        Friendship.status == "accepted"
+    ).first_or_404()
+
+    already = HighFive.query.filter_by(
+        from_user_id=current_user.id, to_user_id=user_id
+    ).filter(HighFive.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0)).first()
+
+    if not already:
+        db.session.add(HighFive(from_user_id=current_user.id, to_user_id=user_id))
+        db.session.commit()
+        flash(f"High five sent to {User.query.get(user_id).display_name}! 🖐️", "success")
+    else:
+        flash("You already high-fived them today!", "info")
+    return redirect(url_for("friend_profile", user_id=user_id))
+
+
 # --------------------------------------------------------------------------- #
 @app.route("/profile", methods=["GET", "POST"])
 @login_required

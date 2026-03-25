@@ -23,6 +23,19 @@ MIGRATIONS = [
     ("Add user_id to lego_set", "ALTER TABLE lego_set ADD COLUMN user_id INTEGER REFERENCES user(id)"),
     ("Add user_id to session", "ALTER TABLE session ADD COLUMN user_id INTEGER REFERENCES user(id)"),
     ("Add is_admin to user", "ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0"),
+    ("Add friendship table", """CREATE TABLE IF NOT EXISTS friendship (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    requester_id INTEGER NOT NULL REFERENCES user(id),
+    addressee_id INTEGER NOT NULL REFERENCES user(id),
+    status VARCHAR(16) DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)"""),
+    ("Add high_five table", """CREATE TABLE IF NOT EXISTS high_five (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_user_id INTEGER NOT NULL REFERENCES user(id),
+    to_user_id INTEGER NOT NULL REFERENCES user(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)"""),
     ("Add password_reset_token table", """CREATE TABLE IF NOT EXISTS password_reset_token (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     token VARCHAR(64) NOT NULL UNIQUE,

@@ -23,6 +23,28 @@ class InviteCode(db.Model):
         return f"<InviteCode {self.code} used={self.is_used}>"
 
 
+class Friendship(db.Model):
+    __tablename__ = "friendship"
+    id = db.Column(db.Integer, primary_key=True)
+    requester_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    addressee_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    status = db.Column(db.String(16), default="pending")  # pending, accepted, declined
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    requester = db.relationship("User", foreign_keys=[requester_id])
+    addressee = db.relationship("User", foreign_keys=[addressee_id])
+
+
+class HighFive(db.Model):
+    __tablename__ = "high_five"
+    id = db.Column(db.Integer, primary_key=True)
+    from_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    to_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    from_user = db.relationship("User", foreign_keys=[from_user_id])
+
+
 class PasswordResetToken(db.Model):
     __tablename__ = "password_reset_token"
     id = db.Column(db.Integer, primary_key=True)

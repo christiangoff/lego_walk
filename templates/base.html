@@ -79,6 +79,14 @@
         </li>
         <li class="nav-item">
           <a
+            class="nav-link {% if request.endpoint in ['friends','friend_profile'] %}active{% endif %}"
+            href="{{ url_for('friends') }}"
+          >
+            <i class="bi bi-people-fill"></i> Friends
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
             class="nav-link {% if request.endpoint == 'data' %}active{% endif %}"
             href="{{ url_for('data') }}"
           >

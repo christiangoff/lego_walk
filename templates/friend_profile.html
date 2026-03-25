@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ friend.display_name }} — StudStep{% endblock %}
+
+{% block content %}
+<div class="row mt-3 mb-3 align-items-center">
+  <div class="col">
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-person-fill lego-accent"></i> {{ friend.display_name }}
+    </h2>
+    <p class="text-muted small mb-0">Friend profile</p>
+  </div>
+  <div class="col-auto d-flex gap-2">
+    <!-- High five -->
+    <form method="POST" action="{{ url_for('high_five', user_id=friend.id) }}">
+      <button type="submit" class="btn btn-lego-yellow fw-bold"
+              {% if already_highfived_today %}disabled title="Already high-fived today"{% endif %}>
+        🖐️ High Five
+        {% if high_fives_received %}
+        <span class="badge bg-dark ms-1">{{ high_fives_received }}</span>
+        {% endif %}
+      </button>
+    </form>
+    <form method="POST" action="{{ url_for('friend_remove', user_id=friend.id) }}"
+          onsubmit="return confirm('Remove {{ friend.display_name }} as a friend?')">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-person-dash"></i> Remove
+      </button>
+    </form>
+    <a href="{{ url_for('friends') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-warning"><i class="bi bi-geo-alt-fill"></i></div>
+        <div class="stat-value">{{ total_miles }}</div>
+        <div class="stat-label">Total Miles</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-danger"><i class="bi bi-fire"></i></div>
+        <div class="stat-value">{{ "{:,}".format(total_calories) }}</div>
+        <div class="stat-label">Calories Burned</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-info"><i class="bi bi-activity"></i></div>
+        <div class="stat-value">{{ total_sessions }}</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="card-body text-center py-3">
+        <div class="stat-icon text-success"><i class="bi bi-trophy-fill"></i></div>
+        <div class="stat-value">{{ sets_completed_count }}</div>
+        <div class="stat-label">Sets Completed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Recent sessions -->
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-activity text-warning"></i> Recent Sessions
+      </div>
+      <div class="card-body p-0">
+        {% if recent_sessions %}
+        <div class="table-responsive">
+          <table class="table table-hover table-dark mb-0 align-middle">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Duration</th>
+                <th>Distance</th>
+                <th>Set</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in recent_sessions %}
+              <tr>
+                <td>{{ s.date.strftime("%b %d, %Y") }}</td>
+                <td>{{ s.duration_minutes | int }} min</td>
+                <td>{{ "%.2f"|format(s.distance_miles) if s.distance_miles else "—" }} mi</td>
+                <td>
+                  {% if s.lego_set %}
+                  <span class="badge bg-warning text-dark">{{ s.lego_set.set_number }}</span>
+                  {% else %}<span class="text-muted">—</span>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted small p-3 mb-0">No sessions yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sets in progress -->
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-tools text-warning"></i> Sets in Progress
+      </div>
+      <div class="card-body p-0">
+        {% if sets_in_progress %}
+        <div class="list-group list-group-flush">
+          {% for ls in sets_in_progress %}
+          <div class="list-group-item bg-transparent border-secondary">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              {% if ls.image_url %}
+              <img src="{{ ls.image_url }}" alt="{{ ls.name }}" style="width:40px;height:40px;object-fit:contain;">
+              {% endif %}
+              <div>
+                <div class="fw-semibold small">{{ ls.name }}</div>
+                <span class="badge bg-warning text-dark"># {{ ls.set_number }}</span>
+                {% if ls.theme %}<span class="badge bg-secondary">{{ ls.theme }}</span>{% endif %}
+              </div>
+            </div>
+            {% if ls.total_bag_count %}
+            {% set bags_done = ls.sessions | sum(attribute='bags_completed') %}
+            {% set pct = [[((bags_done / ls.total_bag_count) * 100) | round | int, 0] | max, 100] | min %}
+            <div class="progress mt-1" style="height:5px;">
+              <div class="progress-bar bg-warning" style="width:{{ pct }}%"></div>
+            </div>
+            <div class="text-muted" style="font-size:0.7rem;">{{ pct }}% complete</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted small p-3 mb-0">No sets in progress.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
